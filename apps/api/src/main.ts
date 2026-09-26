@@ -2,11 +2,25 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(cookieParser());
+
+  // API Doc
+  const config = new DocumentBuilder()
+    .setTitle('novabase')
+    .setDescription('The novabase API description')
+    .setVersion('1.0')
+    .addServer(process.env.API_URL!, 'localhost')
+    .addTag('novabase')
+    .build();
+  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, documentFactory, {
+    jsonDocumentUrl: 'swagger/json',
+  });
 
   // 全局路由前缀
   app.setGlobalPrefix('api');

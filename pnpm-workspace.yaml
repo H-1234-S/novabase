@@ -2,6 +2,7 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
+  '@scarf/scarf': true
   bcrypt: true
   esbuild: true
   unrs-resolver: true
