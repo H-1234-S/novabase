@@ -46,7 +46,8 @@
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "slugify": "^1.6.9"
+    "slugify": "^1.6.9",
+    "undici": "^8.11.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.0",

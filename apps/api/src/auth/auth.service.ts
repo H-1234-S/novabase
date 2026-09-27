@@ -26,6 +26,7 @@ export class AuthService {
   ) {}
 
   // Cookie helpers
+  // Cookie 是存储 JWT 的载体
   setTokenCookies(
     res: Response,
     tokens: { accessToken: string; refreshToken: string },
@@ -63,6 +64,7 @@ export class AuthService {
   }
 
   // JWT signing
+  // JWT 是一种令牌格式，用来证明你是谁
   private signTokens(userId: string, email: string) {
     const payload = { sub: userId, email };
 
