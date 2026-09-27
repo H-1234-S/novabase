@@ -3,12 +3,12 @@ import type { RegisterInput } from '@novabase/types';
 
 export class RegisterDto implements RegisterInput {
   @IsEmail()
-  email!: string;
+  email: string;
 
   @IsString()
   @MinLength(8)
-  password!: string;
+  password: string;
 
   @IsString()
-  name!: string;
+  name: string;
 }
