@@ -7,3 +7,5 @@ export const ORG_ROLES = {
   ADMIN: "admin",
   DEVELOPER: "developer",
 } as const;
+
+export const INVITE_EXPIRES_IN = '24h';

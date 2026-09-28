@@ -19,12 +19,14 @@ import { COOKIE_KEYS } from '@novabase/constants';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
 import type { JwtPayload } from '@novabase/types';
+import { InviteService } from '../members/invite.service.js';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    private readonly inviteService: InviteService,
   ) {}
 
   @Post('register')
@@ -104,5 +106,11 @@ export class AuthController {
     return res.redirect(
       `${this.configService.get<string>('WEB_URL')}/dashboard`,
     );
+  }
+
+  @Get('invite/accept')
+  async acceptInvite(@Query('token') token: string, @Res() res: Response) {
+    await this.inviteService.acceptInvite(token);
+    return res.redirect(`${this.configService.get('WEB_URL')}/dashboard`);
   }
 }

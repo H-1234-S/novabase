@@ -6,6 +6,7 @@ import { DbModule } from './db/db.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { OrgsService } from './orgs/orgs.service.js';
 import { OrgsModule } from './orgs/orgs.module.js';
+import { MembersModule } from './members/members.module.js';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { OrgsModule } from './orgs/orgs.module.js';
     AuthModule,
     DbModule,
     OrgsModule,
+    MembersModule,
   ],
   controllers: [AppController],
   providers: [AppService, OrgsService],
