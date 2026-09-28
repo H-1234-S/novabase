@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { membersAction } from '../actions/action';
 import { inviteSchema } from '../schema/client.schema';
 import { MEMBERS_INTENT } from '../data/constants';
+import { toast } from 'sonner';
 
 interface MembersClientProps {
   slug: string;
@@ -43,6 +44,12 @@ export function MembersClient({
     defaultValues: { email: '' },
   });
 
+  // sonner 提示
+  useEffect(() => {
+    if (state.error) toast.error(state.error, { id: 'invite-form' });
+    if (state.success) toast.success(state.success, { id: 'invite-form' });
+  }, [state.error, state.success]);
+
   return (
     <div className="space-y-6">
       {/* ── Invite form — admin only ─────────────────────────────── */}
@@ -52,13 +59,13 @@ export function MembersClient({
             <CardTitle className="text-base">Invite a member</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* TODO */}
-            {state.error && (
+            {/* TODO:Toast */}
+            {/* {state.error && (
               <p className="text-sm text-destructive mb-3">{state.error}</p>
             )}
             {state.success && (
               <p className="text-sm text-green-600 mb-3">{state.success}</p>
-            )}
+            )} */}
             <form
               action={formAction}
               noValidate
