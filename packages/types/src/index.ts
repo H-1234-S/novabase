@@ -88,3 +88,11 @@ export interface InviteMemberInput {
 export interface UpdateRoleInput {
   role: OrgRole;
 }
+
+export interface CreateProjectInput {
+  name: string;
+}
+
+export interface ProjectWithOrg extends Project {
+  org: Pick<Organization, 'id' | 'name' | 'slug'>;
+}

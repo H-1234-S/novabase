@@ -9,3 +9,8 @@ export const ORG_ROLES = {
 } as const;
 
 export const INVITE_EXPIRES_IN = '24h';
+
+export const PROJECT_KEY_ROLES = {
+  ANON: 'anon',
+  SERVICE_ROLE: 'service_role',
+} as const;
