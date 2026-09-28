@@ -30,7 +30,8 @@ export default async function OrganizationsPage() {
             </div>
             <div className="min-w-0">
               <p className="font-medium text-sm truncate">
-                {'ORGANIZATION NAME'}
+                {org.name}
+                {/* {org.slug} */}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {org.projectCount}{' '}
