@@ -8,8 +8,10 @@ export const projects = pgTable('projects', {
     .references(() => organizations.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
+  // 命名空间
   dbSchema: text('db_schema').notNull().unique(),
   projectUrl: text('project_url').notNull().unique(),
+  // 匿名密钥
   anonKey: text('anon_key').notNull(),
   serviceRoleKey: text('service_role_key').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),

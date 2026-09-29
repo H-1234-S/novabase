@@ -23,6 +23,8 @@ export const orgMembers = pgTable('org_members', {
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
+  // 组织成员角色
+  // 是 admin 还是 developer
   role: orgRoleEnum('role').notNull().default('developer'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   removedAt: timestamp('removed_at'),

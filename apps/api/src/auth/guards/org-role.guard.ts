@@ -48,8 +48,11 @@ export class OrgRoleGuard implements CanActivate {
       )
       .limit(1);
 
+    // requiredRole 不存在只校验是不是该组织成员
     if (!member) throw new NotFoundException('Organization not found');
 
+    // requiredRole 存在才校验是否有权限
+    // 使用 requiredRole 只传参 admin
     if (requiredRole && member.role !== requiredRole) {
       throw new ForbiddenException('Insufficient permissions');
     }

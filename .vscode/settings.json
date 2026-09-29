@@ -32,5 +32,9 @@
   "eslint.workingDirectories": [
     { "directory": "apps/web", "changeProcessCWD": true },
     { "directory": "apps/api", "changeProcessCWD": true }
+  ],
+  "commentTranslate.source": "Bing",
+  "cSpell.words": [
+    "TIMESTAMPTZ"
   ]
 }

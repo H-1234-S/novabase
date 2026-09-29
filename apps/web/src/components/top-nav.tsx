@@ -23,8 +23,6 @@ export function TopNav({ projects }: TopNavProps) {
   const params = useParams<{ slug: string; projectSlug: string }>();
   const currentProject = projects.find((p) => p.slug === params?.projectSlug);
 
-  console.log('projects', projects);
-
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
       <SidebarTrigger className="-ml-1" />
