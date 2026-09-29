@@ -96,3 +96,50 @@ export interface CreateProjectInput {
 export interface ProjectWithOrg extends Project {
   org: Pick<Organization, 'id' | 'name' | 'slug'>;
 }
+
+// table editor
+
+export type ColumnType =
+  | 'text'
+  | 'integer'
+  | 'bigint'
+  | 'boolean'
+  | 'timestamp'
+  | 'uuid'
+  | 'jsonb'
+  | 'numeric';
+
+export interface TableColumn {
+  name: string;
+  type: ColumnType;
+  isNullable: boolean;
+  isPrimaryKey: boolean;
+  defaultValue: string | null;
+  // 外键
+  foreignKey: {
+    table: string;
+    column: string;
+  } | null;
+}
+
+export interface TableInfo {
+  name: string;
+  columns: TableColumn[];
+}
+
+export interface CreateColumnInput {
+  name: string;
+  type: ColumnType;
+  isNullable: boolean;
+  isPrimaryKey: boolean;
+  defaultValue?: string;
+  // 外键表
+  foreignKeyTable?: string;
+  // 外键列
+  foreignKeyColumn?: string;
+}
+
+export interface CreateTableInput {
+  name: string;
+  columns: CreateColumnInput[];
+}

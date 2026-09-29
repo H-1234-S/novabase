@@ -40,10 +40,11 @@ export class ProjectsService {
   }
 
   private async provisionSchema(dbSchema: string): Promise<void> {
+    // 在数据库中创建一个命名空间
+    // IF NOT EXISTS 幂等操作
     await this.drizzle.db.execute(`CREATE SCHEMA IF NOT EXISTS "${dbSchema}"`);
   }
 
-  // Queries
   async getProjectsForOrg(orgSlug: string, userId: string) {
     return this.drizzle.db
       .select({
@@ -101,10 +102,14 @@ export class ProjectsService {
 
     if (!org) throw new NotFoundException('Organization not found');
 
+    // 获取项目 slug
     const projectSlug = this.generateProjectSlug(dto.name);
+    // 生成数据库 schema
     const dbSchema = this.generateDbSchema();
+    // 项目 URL
     const projectUrl = `${this.configService.get<string>('API_URL')}/projects/${projectSlug}`;
 
+    // 配置项目 schema
     await this.provisionSchema(dbSchema);
 
     const [project] = await this.drizzle.db

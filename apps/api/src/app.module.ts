@@ -8,6 +8,7 @@ import { OrgsService } from './orgs/orgs.service.js';
 import { OrgsModule } from './orgs/orgs.module.js';
 import { MembersModule } from './members/members.module.js';
 import { ProjectsModule } from './projects/projects.module.js';
+import { TableEditorModule } from './table-editor/table-editor.module.js';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ProjectsModule } from './projects/projects.module.js';
     OrgsModule,
     MembersModule,
     ProjectsModule,
+    TableEditorModule,
   ],
   controllers: [AppController],
   providers: [AppService, OrgsService],
