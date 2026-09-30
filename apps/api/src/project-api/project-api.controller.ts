@@ -19,6 +19,9 @@ import {
   type RequestProjectKey,
 } from './guards/project-key.guard.js';
 
+// 该 Controller 服务于自动生成的 API
+
+// BUG：Others IP ORGS Issue
 @Controller('projects/:projectSlug/rest')
 @UseGuards(ProjectKeyGuard)
 export class ProjectApiController {
@@ -28,6 +31,7 @@ export class ProjectApiController {
     return req['projectKey'] as ProjectKeyPayload;
   }
 
+  // 非幂等 Interface Call
   private assertWriteAccess(req: RequestProjectKey): void {
     const { role } = this.getProjectKey(req);
     if (role !== PROJECT_KEY_ROLES.SERVICE_ROLE) {
