@@ -14,15 +14,21 @@ async function refreshSession(
   const apiUrl = process.env.API_URL;
   if (!apiUrl) return false;
 
-  const refreshRes = await fetch(`${apiUrl}/auth/refresh`, {
-    method: 'POST',
-    headers: { Cookie: `${COOKIE_KEYS.REFRESH_TOKEN}=${refreshToken}` },
-  });
+  // ??? BUG: Refresh Error
+  try {
+    const refreshRes = await fetch(`${apiUrl}/auth/refresh`, {
+      method: 'POST',
+      headers: { Cookie: `${COOKIE_KEYS.REFRESH_TOKEN}=${refreshToken}` },
+    });
 
-  if (!refreshRes.ok) return false;
+    if (!refreshRes.ok) return false;
 
-  applyAuthCookiesToResponse(response, refreshRes.headers.getSetCookie());
-  return true;
+    applyAuthCookiesToResponse(response, refreshRes.headers.getSetCookie());
+
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function proxy(request: NextRequest) {

@@ -7,7 +7,7 @@ export interface User {
   updatedAt: string;
 }
 
-export type OrgRole = "admin" | "developer";
+export type OrgRole = 'admin' | 'developer';
 
 export interface Organization {
   id: string;
@@ -142,4 +142,29 @@ export interface CreateColumnInput {
 export interface CreateTableInput {
   name: string;
   columns: CreateColumnInput[];
+}
+
+// Auto Generated REST Api
+
+export interface ProjectApiEndpoint {
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  path: string;
+  description: string;
+  example: string;
+}
+
+export interface ProjectApiDocs {
+  projectUrl: string;
+  anonKey: string;
+  serviceRoleKey: string;
+  tables: {
+    name: string;
+    endpoints: ProjectApiEndpoint[];
+  }[];
+}
+
+export interface ProjectBySlugResponse {
+  projects: Project;
+  organizations: Organization;
+  org_members: OrgMember;
 }

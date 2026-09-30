@@ -1,11 +1,11 @@
 export const COOKIE_KEYS = {
-  ACCESS_TOKEN: "access_token",
-  REFRESH_TOKEN: "refresh_token",
+  ACCESS_TOKEN: 'access_token',
+  REFRESH_TOKEN: 'refresh_token',
 } as const;
 
 export const ORG_ROLES = {
-  ADMIN: "admin",
-  DEVELOPER: "developer",
+  ADMIN: 'admin',
+  DEVELOPER: 'developer',
 } as const;
 
 export const INVITE_EXPIRES_IN = '24h';
@@ -35,3 +35,27 @@ export const TABLE_EDITOR_INTENT = {
 
 export type TableEditorIntent =
   (typeof TABLE_EDITOR_INTENT)[keyof typeof TABLE_EDITOR_INTENT];
+
+// Auto Generated REST Api
+
+export const RESERVED_QUERY_PARAMS = new Set([
+  'select',
+  'order',
+  'limit',
+  'offset',
+]);
+
+// 操作符白名单
+export const FILTER_OPERATORS = {
+  eq: '=',
+  neq: '!=',
+  gt: '>',
+  gte: '>=',
+  lt: '<',
+  lte: '<=',
+  like: 'LIKE',
+  ilike: 'ILIKE',
+  is: 'IS',
+} as const;
+
+export type FilterOperator = keyof typeof FILTER_OPERATORS;

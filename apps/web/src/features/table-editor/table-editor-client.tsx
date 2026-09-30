@@ -51,7 +51,7 @@ import { tableEditorAction } from '@/features/table-editor/action';
 import { TABLE_EDITOR_INTENT } from '@novabase/constants';
 import { CreateTableDrawer } from './create-table-drawer';
 import { AddColumnDialog } from './add-column-dialog';
-
+import { toast } from 'sonner';
 interface TableEditorClientProps {
   orgSlug: string;
   projectSlug: string;
@@ -190,6 +190,7 @@ export function TableEditorClient({
     [orgSlug, projectSlug],
   );
 
+  // TODO：All navigation bars are deleted while the sidebar remains selected
   const closeTab = useCallback((tableName: string) => {
     setOpenTabs((prev) => {
       const remaining = prev.filter((t) => t.tableName !== tableName);
@@ -200,6 +201,7 @@ export function TableEditorClient({
     });
   }, []);
 
+  // TODO：Delete Table Logic
   const deleteTable = async (tableName: string) => {
     beginTableFetch(tableName);
 
@@ -213,6 +215,8 @@ export function TableEditorClient({
 
     const result = await tableEditorAction(actionCtx, {}, formData);
     if (result.error) {
+      // TODO：Detailed error message prompt
+      toast.error(result.error);
       setTables((prev) => [...prev, tableName].sort());
       return;
     }
@@ -392,6 +396,7 @@ function TableListPanel({
       </div>
 
       <div className="border-b border-border px-3 py-2">
+        {/* TODO：？？？？ */}
         <Button
           variant="outline"
           size="sm"
@@ -418,8 +423,9 @@ function TableListPanel({
         </div>
       </div>
 
+      {/* TODO：Table List Switch Beat Issue */}
       <ScrollArea className="min-h-0 flex-1">
-        <div className="py-1">
+        <div className="pb-1">
           {filteredTables.map((table) => (
             <div
               key={table}
@@ -464,6 +470,7 @@ function TableListPanel({
                       Copy SELECT query
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
+                    {/* TODO: Alert Prompt */}
                     <DropdownMenuItem
                       className="text-destructive"
                       onSelect={() => void onDeleteTable(table)}
@@ -529,11 +536,12 @@ function EditorMainPanel({
           showMobileBack && openTabs.length <= 1 && 'hidden',
         )}
       >
+        {/* TODO： Table Navigation bar switching issue */}
         {openTabs.map((tab) => (
           <div
             key={tab.tableName}
             className={cn(
-              'flex h-9 shrink-0 cursor-pointer items-center gap-1.5 border-r border-border px-3 text-sm',
+              'flex h-8 shrink-0 cursor-pointer items-center gap-1.5 border-r border-border px-3 text-sm',
               activeTab === tab.tableName
                 ? 'bg-background text-foreground'
                 : 'bg-muted/40 text-muted-foreground hover:bg-muted',
@@ -627,6 +635,7 @@ function DataGrid({
       ...tableInfo.columns.map((col): ColumnDef<Record<string, unknown>> => ({
         id: col.name,
         header: () => (
+          // TODO：Leading Spaces
           <div className="flex items-center gap-1.5">
             {col.isPrimaryKey && <span className="text-yellow-500">🔑</span>}
             {col.foreignKey && <span className="text-blue-500">🔗</span>}

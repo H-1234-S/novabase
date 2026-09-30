@@ -9,6 +9,7 @@ import { OrgsModule } from './orgs/orgs.module.js';
 import { MembersModule } from './members/members.module.js';
 import { ProjectsModule } from './projects/projects.module.js';
 import { TableEditorModule } from './table-editor/table-editor.module.js';
+import { ProjectApiModule } from './project-api/project-api.module.js';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { TableEditorModule } from './table-editor/table-editor.module.js';
     MembersModule,
     ProjectsModule,
     TableEditorModule,
+    ProjectApiModule,
   ],
   controllers: [AppController],
   providers: [AppService, OrgsService],
