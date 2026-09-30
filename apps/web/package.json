@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
+    "@monaco-editor/react": "^4.7.0",
     "@novabase/constants": "workspace:*",
     "@novabase/types": "workspace:*",
     "@tanstack/react-table": "8.21.3",
@@ -17,6 +18,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cn": "^0.4.0",
+    "geist": "^1.7.2",
     "jose": "^6.2.12",
     "lucide-react": "^1.48.0",
     "next": "16.3.6",

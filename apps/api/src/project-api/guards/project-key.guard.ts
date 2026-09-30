@@ -25,6 +25,7 @@ export class ProjectKeyGuard implements CanActivate {
     private configService: ConfigService,
   ) {}
 
+  // 该 Guard 用于验签
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<RequestProjectKey>();
     const authHeader = request.headers.authorization;
@@ -35,7 +36,9 @@ export class ProjectKeyGuard implements CanActivate {
 
     const token = authHeader.slice(7);
 
+    // TODO：JWT Workflow
     try {
+      //  Parsed ProjectId and Role
       const payload = this.jwtService.verify<ProjectKeyPayload>(token, {
         secret: this.configService.get<string>('PROJECT_JWT_SECRET'),
       });
