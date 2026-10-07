@@ -28,6 +28,7 @@
     "react-dom": "19.2.8",
     "react-hook-form": "^7.89.0",
     "react-resizable-panels": "^4.14.1",
+    "socket.io-client": "^4.8.4",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.4.3"

@@ -52,6 +52,7 @@ const projectNavItems = [
   { icon: Radio, label: 'Realtime', segment: 'realtime' },
 ] as const;
 
+// BUG：Organization Page Sidebar Design Defect
 function buildNavHref(
   orgSlug: string | undefined,
   projectSlug: string | undefined,

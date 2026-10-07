@@ -95,6 +95,8 @@ export class SqlEditorService {
     projectSlug: string,
     querySql: string,
   ): Promise<QueryResult> {
+    // TODO：SQL Verification
+
     const project = await this.getProject(orgSlug, projectSlug);
     // 解析第一行 SQL 语句
     const statement = this.parseSingleStatement(querySql);

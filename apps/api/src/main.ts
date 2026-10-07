@@ -4,12 +4,15 @@ import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ProxyAgent, setGlobalDispatcher } from 'undici';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 // 网络走代理
 setGlobalDispatcher(new ProxyAgent('http://127.0.0.1:7897'));
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   app.use(cookieParser());
 
