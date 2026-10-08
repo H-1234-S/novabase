@@ -34,5 +34,5 @@
     { "directory": "apps/api", "changeProcessCWD": true }
   ],
   "commentTranslate.source": "Bing",
-  "cSpell.words": ["ILIKE", "TIMESTAMPTZ"]
+  "cSpell.words": ["ILIKE", "TIMESTAMPTZ", "uploadthing"]
 }
