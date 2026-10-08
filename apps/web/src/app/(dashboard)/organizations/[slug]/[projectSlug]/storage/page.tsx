@@ -11,6 +11,7 @@ export default async function StoragePage({
 }) {
   const { slug, projectSlug } = await params;
   const buckets = await retrieveBucketsFromApi(slug, projectSlug);
+  // 服务端预取第一个桶内 objects 数据
   const initialObjects = buckets[0]
     ? await retrieveObjectsFromApi(slug, projectSlug, buckets[0].id)
     : [];
