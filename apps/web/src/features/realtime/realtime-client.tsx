@@ -73,9 +73,11 @@ export function RealtimeClient({
       setConnected(false);
     });
 
+    // 接收服务端传来的信息
     socket.on(REALTIME_EVENTS.EVENT, (event: RealtimeEvent) => {
       setEvents((prev) => [
         { ...event, id: crypto.randomUUID() },
+        // 最多一百条
         ...prev.slice(0, 99),
       ]);
     });
@@ -96,6 +98,7 @@ export function RealtimeClient({
       const apiUrl =
         process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api';
 
+      // 触发监听配置
       if (enabled) {
         const res = await fetch(
           `${apiUrl}/orgs/${orgSlug}/projects/${projectSlug}/realtime/${tableName}/enable`,
@@ -104,9 +107,11 @@ export function RealtimeClient({
 
         if (!res.ok) return;
 
+        // 触发 Subscribe 事件；进行监听
         socket.emit(REALTIME_EVENTS.SUBSCRIBE, tableName);
         setSubscribedTables((prev) => new Set([...prev, tableName]));
       } else {
+        // 触发 unsubscribe 事件，结束监听
         socket.emit(REALTIME_EVENTS.UNSUBSCRIBE, tableName);
         setSubscribedTables((prev) => {
           const next = new Set(prev);
@@ -114,7 +119,7 @@ export function RealtimeClient({
           return next;
         });
 
-        // 取消监听
+        // 移除监听配置
         await fetch(
           `${apiUrl}/orgs/${orgSlug}/projects/${projectSlug}/realtime/${tableName}/disable`,
           { method: 'DELETE', credentials: 'include' },

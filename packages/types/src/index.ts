@@ -198,3 +198,30 @@ export interface RealtimeEvent {
   projectId: string;
   timestamp: string;
 }
+
+// Storage
+export type BucketAccess = 'public' | 'private';
+
+export interface StorageBucket {
+  id: string;
+  projectId: string;
+  name: string;
+  access: BucketAccess;
+  createdAt: string;
+}
+
+export interface StorageObject {
+  id: string;
+  bucketId: string;
+  name: string;
+  size: number;
+  mimeType: string;
+  utKey: string; // UploadThing 文件键 — 用于删除或获取签名 URL
+  url: string; // 公共 URL（公共存储桶）或空字符串（私有）
+  createdAt: string;
+}
+
+export interface CreateBucketInput {
+  name: string;
+  access: BucketAccess;
+}
