@@ -29,6 +29,7 @@ export class ProjectsService {
   }
 
   private signProjectKey(projectId: string, role: string): string {
+    // 签发项目密钥
     return this.jwtService.sign(
       { projectId, role },
       {
@@ -125,6 +126,7 @@ export class ProjectsService {
       })
       .returning();
 
+    // 生成 key
     const anonKey = this.signProjectKey(project.id, PROJECT_KEY_ROLES.ANON);
     const serviceRoleKey = this.signProjectKey(
       project.id,

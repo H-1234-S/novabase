@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -155,5 +156,39 @@ export class StorageService {
     });
 
     return { url: ufsUrl };
+  }
+
+  // javascript-SDK
+  async assertProjectSlug(
+    projectId: string,
+    projectSlug: string,
+  ): Promise<void> {
+    const [project] = await this.drizzle.db
+      .select({ slug: projects.slug })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    if (!project) throw new NotFoundException('Project not found');
+
+    if (project.slug !== projectSlug) {
+      throw new ForbiddenException('API key does not match this project URL');
+    }
+  }
+
+  async getBucketByName(projectId: string, bucketName: string) {
+    const [bucket] = await this.drizzle.db
+      .select()
+      .from(storageBuckets)
+      .where(
+        and(
+          eq(storageBuckets.projectId, projectId),
+          eq(storageBuckets.name, bucketName),
+        ),
+      )
+      .limit(1);
+
+    if (!bucket) throw new NotFoundException('Bucket not found');
+    return bucket;
   }
 }
