@@ -450,6 +450,7 @@ export function StorageClient({
                         className="group relative rounded-xl border border-border p-3 transition-colors hover:bg-accent"
                       >
                         <div className="mb-2 flex h-16 items-center justify-center">
+                          {/* 如果是图片则小图预览展示 */}
                           {object.mimeType.startsWith('image/') &&
                           object.url ? (
                             // eslint-disable-next-line @next/next/no-img-element
