@@ -1,0 +1,33 @@
+{
+  "name": "novabase-js",
+  "version": "1.0.0",
+  "description": "The official JavaScript SDK for Novabase",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "socket.io-client": "^4.8.4",
+    "uploadthing": "^7.7.4",
+    "@novabase/constants": "workspace:*"
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.0",
+    "typescript": "^7.0.2",
+    "@novabase/types": "workspace:*"
+  }
+}
