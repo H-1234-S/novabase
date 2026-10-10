@@ -23,7 +23,9 @@
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
-    "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
+    "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+    "db:generate:comment": "drizzle-kit 生成的迁移缺少 IF NOT EXISTS，重跑 migrate 会因表已存在而失败",
+    "db:reset": "tsx scripts/reset-db.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

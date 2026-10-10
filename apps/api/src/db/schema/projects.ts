@@ -15,6 +15,14 @@ export const projects = pgTable('projects', {
   anonKey: text('anon_key').notNull(),
   // 用于 Write Operation
   serviceRoleKey: text('service_role_key').notNull(),
+  // project auth
+  googleClientId: text('google_client_id'),
+  googleClientSecret: text('google_client_secret'),
+  githubClientId: text('github_client_id'),
+  githubClientSecret: text('github_client_secret'),
+  authJwtSecret: text('auth_jwt_secret').notNull(),
+  siteUrl: text('site_url'),
+
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

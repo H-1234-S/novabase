@@ -12,3 +12,4 @@
 1. Sidebar 响应式在断点 800-950 区间 Trigger 问题
 2. Database 删除 All Table 则 Sidebar 依旧保持 Selected 状态
 3. Neon 对空闲数据库约 5 分钟无活动就 suspend 计算，挂起时代理服务器会直接切断 WebSocket
+4. Project Auth Providers Save 之后才能保存

@@ -225,3 +225,39 @@ export interface CreateBucketInput {
   name: string;
   access: BucketAccess;
 }
+
+// AUTH
+export interface ProjectAuthUser {
+  id: string;
+  email: string;
+  emailVerified: boolean;
+  provider: 'email' | 'google' | 'github';
+  createdAt: string;
+}
+
+export interface SignUpInput {
+  email: string;
+  password: string;
+}
+
+export interface SignInInput {
+  email: string;
+  password: string;
+}
+
+export interface MagicLinkInput {
+  email: string;
+}
+
+export interface ProjectOAuthSettings {
+  siteUrl: string | null;
+  googleClientId: string | null;
+  googleClientSecret: string | null;
+  githubClientId: string | null;
+  githubClientSecret: string | null;
+}
+
+export interface ProjectAuthResponse {
+  user: { id: string; email: string };
+  accessToken: string;
+}
