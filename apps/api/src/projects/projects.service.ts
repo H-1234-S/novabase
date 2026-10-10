@@ -24,6 +24,7 @@ export class ProjectsService {
     return `${base}-${suffix}`;
   }
 
+  // 生成 dbSchema
   private generateDbSchema(): string {
     return `proj_${randomBytes(4).toString('hex')}`;
   }
@@ -113,6 +114,9 @@ export class ProjectsService {
     // 配置项目 schema
     await this.provisionSchema(dbSchema);
 
+    // TODO:DELETE
+    const authJwtSecret = randomBytes(32).toString();
+
     const [project] = await this.drizzle.db
       .insert(projects)
       .values({
@@ -123,6 +127,7 @@ export class ProjectsService {
         projectUrl,
         anonKey: '',
         serviceRoleKey: '',
+        authJwtSecret,
       })
       .returning();
 
