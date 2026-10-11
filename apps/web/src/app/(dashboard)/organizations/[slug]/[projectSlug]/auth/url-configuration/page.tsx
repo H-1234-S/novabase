@@ -1,5 +1,6 @@
 import { retrieveOAuthSettingsFromApi } from '@/features/project-auth/project-auth-helpers.server';
 import { ProjectAuthUrlConfig } from '@/features/project-auth/components/project-auth-url-config';
+import { getProjectApiBase } from '@/lib/server-api';
 
 export default async function AuthUrlConfigurationPage({
   params,
@@ -7,8 +8,6 @@ export default async function AuthUrlConfigurationPage({
   params: Promise<{ slug: string; projectSlug: string }>;
 }) {
   const { slug, projectSlug } = await params;
-  const apiBaseUrl =
-    process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api';
   const settings = await retrieveOAuthSettingsFromApi(slug, projectSlug);
   const fallbackSiteUrl =
     process.env.NEXT_PUBLIC_WEB_URL ?? 'http://localhost:3001';
@@ -18,7 +17,7 @@ export default async function AuthUrlConfigurationPage({
       orgSlug={slug}
       projectSlug={projectSlug}
       initialSiteUrl={settings.siteUrl ?? fallbackSiteUrl}
-      apiBaseUrl={apiBaseUrl}
+      projectApiBase={getProjectApiBase(projectSlug)}
     />
   );
 }

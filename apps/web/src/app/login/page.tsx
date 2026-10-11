@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { authAction } from '@/features/auth/action';
 import { AUTH_INTENT } from '@/features/auth/constants';
 import { loginSchema } from '@/features/auth/client.schema';
+import { getClientApiBase } from '@/lib/client-api';
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
@@ -123,7 +124,7 @@ export default function LoginPage() {
           <div className="space-y-3">
             <Button variant="outline" size="lg" className="w-full" asChild>
               <a
-                href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`}
+                href={`${getClientApiBase()}/auth/google`}
                 className="inline-flex items-center justify-center gap-2"
               >
                 <svg className="size-4 shrink-0" viewBox="0 0 24 24">
@@ -150,7 +151,7 @@ export default function LoginPage() {
 
             <Button variant="outline" size="lg" className="w-full" asChild>
               <a
-                href={`${process.env.NEXT_PUBLIC_API_URL}/auth/github`}
+                href={`${getClientApiBase()}/auth/github`}
                 className="inline-flex items-center justify-center gap-2"
               >
                 <svg

@@ -3,6 +3,7 @@ import {
   retrieveTablesForRealtime,
 } from '@/features/realtime/realtime-helpers.server';
 import { RealtimeClient } from '@/features/realtime/realtime-client';
+import { getRealtimeOrigin } from '@/lib/client-api';
 
 export default async function RealtimePage({
   params,
@@ -23,6 +24,7 @@ export default async function RealtimePage({
       projectId={project.id}
       anonKey={project.anonKey}
       tables={tables}
+      socketOrigin={getRealtimeOrigin()}
     />
   );
 }

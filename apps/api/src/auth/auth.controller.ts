@@ -3,11 +3,13 @@ import {
   Controller,
   Get,
   HttpCode,
+  Param,
   Post,
   Query,
   Redirect,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
@@ -20,6 +22,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
 import type { JwtPayload } from '@novabase/types';
 import { InviteService } from '../members/invite.service.js';
+import { OAuthHandoffService } from './oauth-handoff.service.js';
 
 @Controller('auth')
 export class AuthController {
@@ -27,6 +30,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
     private readonly inviteService: InviteService,
+    private readonly oauthHandoffService: OAuthHandoffService,
   ) {}
 
   @Post('register')
@@ -86,10 +90,7 @@ export class AuthController {
   @Get('google/callback')
   async googleCallback(@Query('code') code: string, @Res() res: Response) {
     const tokens = await this.authService.handleGoogleCallback(code);
-    this.authService.setTokenCookies(res, tokens);
-    return res.redirect(
-      `${this.configService.get<string>('WEB_URL')}/dashboard`,
-    );
+    return res.redirect(this.buildWebHandoffUrl(tokens));
   }
 
   @Get('github')
@@ -102,10 +103,35 @@ export class AuthController {
   @Get('github/callback')
   async githubCallback(@Query('code') code: string, @Res() res: Response) {
     const tokens = await this.authService.handleGithubCallback(code);
-    this.authService.setTokenCookies(res, tokens);
-    return res.redirect(
-      `${this.configService.get<string>('WEB_URL')}/dashboard`,
-    );
+    return res.redirect(this.buildWebHandoffUrl(tokens));
+  }
+
+  /**
+   * 用一次性 code 换 token。
+   *
+   * 由 web 的 /auth/callback 在服务端调用，换到 token 后写进 web 域的 Cookie。
+   * code 只能消费一次，过期或已用过返回 401。
+   */
+  @Get('handoff/:code')
+  consumeHandoff(@Param('code') code: string) {
+    const tokens = this.oauthHandoffService.consume(code);
+    if (!tokens) {
+      throw new UnauthorizedException('Invalid or expired OAuth handoff code');
+    }
+    return tokens;
+  }
+
+  /**
+   * OAuth 回调不直接种 Cookie（跨域时浏览器不会把 API 域的 Cookie 带给 web 域），
+   * 而是生成一次性 code 跳回 web，由 web 自己换 token 并写 Cookie。
+   */
+  private buildWebHandoffUrl(tokens: {
+    accessToken: string;
+    refreshToken: string;
+  }): string {
+    const handoffCode = this.oauthHandoffService.create(tokens);
+    const webUrl = this.configService.get<string>('WEB_URL');
+    return `${webUrl}/auth/callback?code=${handoffCode}`;
   }
 
   @Get('invite/accept')

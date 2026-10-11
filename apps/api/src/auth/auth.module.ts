@@ -5,11 +5,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { DbModule } from '../db/db.module.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { MembersModule } from '../members/members.module.js';
+import { OAuthHandoffService } from './oauth-handoff.service.js';
 
 @Module({
   imports: [JwtModule.register({}), DbModule, MembersModule],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard],
+  providers: [AuthService, OAuthHandoffService, JwtAuthGuard],
   exports: [JwtModule, JwtAuthGuard],
 })
 export class AuthModule {}

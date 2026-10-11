@@ -20,7 +20,7 @@ import { PROJECT_AUTH_INTENT } from '../data/project-auth-constants';
 
 type SiteUrlValues = z.infer<typeof siteUrlSchema>;
 
-function CopyRow({ value }: { value: string }) {
+function CopyRow({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -30,10 +30,13 @@ function CopyRow({ value }: { value: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center">
-      <code className="min-w-0 flex-1 truncate rounded-md border bg-muted/30 px-3 py-2 text-sm">
-        {value}
-      </code>
+    <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start">
+      <div className="min-w-0 flex-1 space-y-1">
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        <code className="block break-all rounded-md border bg-muted/30 px-3 py-2 text-sm">
+          {value}
+        </code>
+      </div>
       <Button type="button" variant="ghost" size="sm" onClick={copy}>
         {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
       </Button>
@@ -45,12 +48,12 @@ export function ProjectAuthUrlConfig({
   orgSlug,
   projectSlug,
   initialSiteUrl,
-  apiBaseUrl,
+  projectApiBase,
 }: {
   orgSlug: string;
   projectSlug: string;
   initialSiteUrl: string;
-  apiBaseUrl: string;
+  projectApiBase: string;
 }) {
   const boundAction = projectAuthAction.bind(null, { orgSlug, projectSlug });
   const [state, formAction, isPending] = useActionState(boundAction, {});
@@ -61,9 +64,12 @@ export function ProjectAuthUrlConfig({
   });
 
   const redirectUrls = [
-    `${apiBaseUrl}/projects/${projectSlug}/auth/google/callback`,
-    `${apiBaseUrl}/projects/${projectSlug}/auth/github/callback`,
-    `${apiBaseUrl}/projects/${projectSlug}/auth/magic-link/verify`,
+    { label: 'Google Callback', url: `${projectApiBase}/auth/google/callback` },
+    { label: 'GitHub Callback', url: `${projectApiBase}/auth/github/callback` },
+    {
+      label: 'Magic Link Verify',
+      url: `${projectApiBase}/auth/magic-link/verify`,
+    },
   ];
 
   return (
@@ -141,8 +147,8 @@ export function ProjectAuthUrlConfig({
         </div>
 
         <div className="rounded-lg border divide-y">
-          {redirectUrls.map((url) => (
-            <CopyRow key={url} value={url} />
+          {redirectUrls.map(({ label, url }) => (
+            <CopyRow key={url} label={label} value={url} />
           ))}
         </div>
       </section>

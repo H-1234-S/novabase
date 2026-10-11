@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import type { ProjectOAuthSettings } from '@novabase/types';
 import { ChevronRight, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getClientApiBase } from '@/lib/client-api';
 
 function GithubIcon({ className }: { className?: string }) {
   return (
@@ -66,7 +67,7 @@ export function ProjectAuthProviders({
     setMessage(null);
     startTransition(async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/orgs/${orgSlug}/projects/${projectSlug}/auth/settings`,
+        `${getClientApiBase()}/orgs/${orgSlug}/projects/${projectSlug}/auth/settings`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

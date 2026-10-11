@@ -36,12 +36,14 @@ import {
   Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getClientApiBase, getClientApiOrigin } from '@/lib/client-api';
 import type {
   StorageBucket,
   StorageObject,
   BucketAccess,
 } from '@novabase/types';
-import { OurStorageRouter } from '../../../../api/src/storage/uploadthing.js';
+// 仅作为类型使用：不要把后端 router 的实现打进前端 bundle
+import type { OurStorageRouter } from '../../../../api/src/storage/uploadthing.js';
 
 interface StorageClientProps {
   orgSlug: string;
@@ -57,7 +59,7 @@ function formatBytes(bytes: number): string {
 }
 
 function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api';
+  return getClientApiBase();
 }
 
 export function StorageClient({
@@ -85,7 +87,7 @@ export function StorageClient({
   const apiBase = getApiBaseUrl();
   const storageBase = `${apiBase}/orgs/${orgSlug}/projects/${projectSlug}/storage`;
 
-  const apiOrigin = useMemo(() => new URL(apiBase).origin, [apiBase]);
+  const apiOrigin = useMemo(() => getClientApiOrigin(), []);
 
   const uploadFetch = useCallback(
     (input: RequestInfo | URL, init?: RequestInit) => {
@@ -95,7 +97,12 @@ export function StorageClient({
           : input instanceof URL
             ? input.href
             : input.url;
-      const isOurApi = new URL(href).origin === apiOrigin;
+      // 生产环境下 apiOrigin 是相对基址，需要按当前站点补全后再比较
+      const sameOrigin = apiOrigin || window.location.origin;
+      const resolved = href.startsWith('http')
+        ? new URL(href)
+        : new URL(href, sameOrigin);
+      const isOurApi = resolved.origin === sameOrigin;
       return fetch(input, {
         ...init,
         credentials: isOurApi ? 'include' : init?.credentials,
@@ -409,8 +416,10 @@ export function StorageClient({
                         }
                       }}
                       appearance={{
+                        // ut-ready: 这类变体在构建后会失效，直接写显式 class
                         button:
-                          'ut-ready:bg-primary ut-ready:text-primary-foreground h-8 px-3 text-sm rounded-md',
+                          'inline-flex items-center justify-center bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm rounded-md font-medium cursor-pointer',
+                        container: 'inline-flex',
                         allowedContent: 'hidden',
                       }}
                     />

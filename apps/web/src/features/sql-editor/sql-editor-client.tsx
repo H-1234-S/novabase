@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Play, Clock, History, X } from 'lucide-react';
 import type { QueryResult, QueryHistoryItem } from '@novabase/types';
+import { getClientApiBase } from '@/lib/client-api';
 
 // dynamic 动态导入，基于 React.lazy 实现
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
@@ -67,7 +68,7 @@ export function SqlEditorClient({
 
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/orgs/${orgSlug}/projects/${projectSlug}/sql`,
+          `${getClientApiBase()}/orgs/${orgSlug}/projects/${projectSlug}/sql`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

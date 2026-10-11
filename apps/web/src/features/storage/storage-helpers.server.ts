@@ -28,9 +28,15 @@ export async function retrieveObjectsFromApi(
 ): Promise<StorageObject[]> {
   const token = await retrieveTokenFromCookie();
 
-  const { data } = await apiClient.get<StorageObject[]>(
-    `/orgs/${orgSlug}/projects/${projectSlug}/storage/buckets/${bucketId}/objects`,
-    { headers: { Cookie: `${COOKIE_KEYS.ACCESS_TOKEN}=${token}` } },
-  );
-  return data;
+  // 桶刚建好或还没对象时上游可能报错，这里兜底成空列表，
+  // 不要因为列对象失败就把整个页面打挂
+  try {
+    const { data } = await apiClient.get<StorageObject[]>(
+      `/orgs/${orgSlug}/projects/${projectSlug}/storage/buckets/${bucketId}/objects`,
+      { headers: { Cookie: `${COOKIE_KEYS.ACCESS_TOKEN}=${token}` } },
+    );
+    return data;
+  } catch {
+    return [];
+  }
 }

@@ -1,6 +1,9 @@
 node_modules/
 dist/
 .next/
+.vercel/
 .env
 .env.local
 *.env
+# SDK 打包产物不入库
+*.tgz

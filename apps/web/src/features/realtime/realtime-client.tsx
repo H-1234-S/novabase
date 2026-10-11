@@ -10,6 +10,7 @@ import { Radio, Trash2, Table2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { REALTIME_EVENTS } from '@novabase/constants';
 import type { RealtimeEvent } from '@novabase/types';
+import { getClientApiBase } from '@/lib/client-api';
 
 interface RealtimeClientProps {
   orgSlug: string;
@@ -17,6 +18,8 @@ interface RealtimeClientProps {
   projectId: string;
   anonKey: string;
   tables: string[];
+  /** Socket.IO 的 origin（不含 /api），由服务端算好传进来 */
+  socketOrigin: string;
 }
 
 const EVENT_COLORS: Record<string, string> = {
@@ -25,18 +28,13 @@ const EVENT_COLORS: Record<string, string> = {
   DELETE: 'bg-red-100 text-red-700',
 };
 
-function getRealtimeSocketBaseUrl(): string {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api';
-  // WebSocket namespace is NOT under /api
-  return apiUrl.replace(/\/api\/?$/, '');
-}
-
 export function RealtimeClient({
   orgSlug,
   projectSlug,
   projectId,
   anonKey,
   tables,
+  socketOrigin,
 }: RealtimeClientProps) {
   const [connected, setConnected] = useState(false);
   const [subscribedTables, setSubscribedTables] = useState<Set<string>>(
@@ -53,7 +51,7 @@ export function RealtimeClient({
   useEffect(() => {
     // 建立 Socket 连接
     // 请求到达后端的 Gateway
-    const socket = io(`${getRealtimeSocketBaseUrl()}/realtime`, {
+    const socket = io(`${socketOrigin}/realtime`, {
       auth: { token: anonKey },
       transports: ['websocket', 'polling'],
     });
@@ -87,7 +85,7 @@ export function RealtimeClient({
     return () => {
       socket.disconnect();
     };
-  }, [anonKey]);
+  }, [anonKey, socketOrigin]);
 
   // Switch Call Function
   const toggleTable = useCallback(
@@ -95,8 +93,7 @@ export function RealtimeClient({
       const socket = socketRef.current;
       if (!socket) return;
 
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api';
+      const apiUrl = getClientApiBase();
 
       // 触发监听配置
       if (enabled) {
