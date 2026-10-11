@@ -1,0 +1,57 @@
+{
+  "name": "novabase",
+  "version": "0.1.0",
+  "description": "Official JavaScript SDK for Novabase — a lightweight Node.js BaaS platform with Postgres, realtime, storage and auth.",
+  "author": "H-1234-S",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/H-1234-S/novabase.git",
+    "directory": "packages/novabase-js"
+  },
+  "homepage": "https://github.com/H-1234-S/novabase",
+  "bugs": {
+    "url": "https://github.com/H-1234-S/novabase/issues"
+  },
+  "keywords": [
+    "novabase",
+    "baas",
+    "backend",
+    "database",
+    "realtime",
+    "auth",
+    "storage"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch"
+  },
+  "packageManager": "pnpm@12.6.0",
+  "dependencies": {
+    "socket.io-client": "^4.8.4",
+    "uploadthing": "^7.7.4"
+  },
+  "devDependencies": {
+    "@novabase/constants": "workspace:*",
+    "@novabase/types": "workspace:*",
+    "tsdown": "^0.23.0",
+    "typescript": "^7.0.2"
+  }
+}
