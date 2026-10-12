@@ -11,17 +11,17 @@ Official JavaScript SDK for **Novabase** — a lightweight Node.js BaaS platform
 ## Install
 
 ```bash
-npm install novabase
+npm install @hushaoqiong/novabase
 # or
-pnpm add novabase
+pnpm add @hushaoqiong/novabase
 # or
-yarn add novabase
+yarn add @hushaoqiong/novabase
 ```
 
 ## Quick start
 
 ```ts
-import { createClient } from 'novabase';
+import { createClient } from '@hushaoqiong/novabase';
 
 const novabase = createClient(
   'https://your-project.novabase.app', // project URL
