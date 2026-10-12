@@ -14,3 +14,9 @@ export { NovabaseRealtime } from './realtime';
 export type { RealtimeCallback } from './realtime';
 export { NovabaseStorage } from './storage';
 export { NovabaseAuth } from './auth';
+export type {
+  RealtimeEvent,
+  RealtimeEventType,
+  StorageObject,
+  BucketAccess,
+} from './types';

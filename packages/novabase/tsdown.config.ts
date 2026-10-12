@@ -9,7 +9,6 @@ export default defineConfig({
   sourcemap: true,
   minify: false,
   deps: {
-    neverBundle: ['@novabase/types'],
     alwaysBundle: [
       'socket.io-client',
       '@novabase/constants',

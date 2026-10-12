@@ -1,6 +1,6 @@
 import { io, type Socket } from 'socket.io-client';
 import { REALTIME_EVENTS } from '@novabase/constants';
-import type { RealtimeEvent } from '@novabase/types';
+import type { RealtimeEvent } from '../types';
 
 export type RealtimeCallback = (event: RealtimeEvent) => void;
 
