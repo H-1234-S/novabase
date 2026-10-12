@@ -1,5 +1,5 @@
 import { genUploader } from 'uploadthing/client';
-import type { StorageObject } from '@novabase/types';
+import type { StorageObject } from '../types';
 
 export interface StorageResult<T> {
   data: T | null;

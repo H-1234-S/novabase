@@ -7,7 +7,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/H-1234-S/novabase.git",
-    "directory": "packages/novabase-js"
+    "directory": "packages/novabase"
   },
   "homepage": "https://github.com/H-1234-S/novabase",
   "bugs": {
@@ -41,7 +41,8 @@
   },
   "scripts": {
     "build": "tsdown",
-    "dev": "tsdown --watch"
+    "dev": "tsdown --watch",
+    "prepublishOnly": "tsdown"
   },
   "packageManager": "pnpm@12.6.0",
   "dependencies": {
@@ -50,7 +51,6 @@
   },
   "devDependencies": {
     "@novabase/constants": "workspace:*",
-    "@novabase/types": "workspace:*",
     "tsdown": "^0.23.0",
     "typescript": "^7.0.2"
   }
