@@ -1,5 +1,5 @@
 {
-  "name": "novabase",
+  "name": "@hushaoqiong/novabase",
   "version": "0.1.0",
   "description": "Official JavaScript SDK for Novabase — a lightweight Node.js BaaS platform with Postgres, realtime, storage and auth.",
   "author": "H-1234-S",
