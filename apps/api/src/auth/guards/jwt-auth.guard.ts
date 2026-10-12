@@ -28,6 +28,7 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
+      // 对 token 进行校验，不正确直接抛出错误
       const payload = this.jwtService.verify<JwtPayload>(token, {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
       });

@@ -11,7 +11,7 @@ export const projects = pgTable('projects', {
   // 命名空间
   dbSchema: text('db_schema').notNull().unique(),
   projectUrl: text('project_url').notNull().unique(),
-  // 用于Read Operation
+  // 用于 Read Operation
   anonKey: text('anon_key').notNull(),
   // 用于 Write Operation
   serviceRoleKey: text('service_role_key').notNull(),
