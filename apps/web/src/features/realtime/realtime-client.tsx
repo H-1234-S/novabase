@@ -38,23 +38,30 @@ export function RealtimeClient({
   anonKey,
   tables,
 }: RealtimeClientProps) {
+  // 连接状态
   const [connected, setConnected] = useState(false);
+  // 订阅表列表
   const [subscribedTables, setSubscribedTables] = useState<Set<string>>(
     new Set(),
   );
   const [events, setEvents] = useState<(RealtimeEvent & { id: string })[]>([]);
+  // socket 实例
   const socketRef = useRef<Socket | null>(null);
+  // 订阅表列表 ref
   const subscribedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     subscribedRef.current = subscribedTables;
   }, [subscribedTables]);
 
+  // 进入页面即鉴权
   useEffect(() => {
     // 建立 Socket 连接
     // 请求到达后端的 Gateway
     const socket = io(`${getRealtimeSocketBaseUrl()}/realtime`, {
       auth: { token: anonKey },
+      // Socket.io 的两种传输方式
+      // 优先 websocket，失败回退 polling
       transports: ['websocket', 'polling'],
     });
 

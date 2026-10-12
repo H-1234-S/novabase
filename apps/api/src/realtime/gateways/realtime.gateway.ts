@@ -64,6 +64,7 @@ export class RealtimeGateway
         secret: this.configService.get<string>('PROJECT_JWT_SECRET'),
       });
 
+      // TODO:anonKey 解析出来的 role 只能为 anon
       if (
         payload.role !== PROJECT_KEY_ROLES.ANON &&
         payload.role !== PROJECT_KEY_ROLES.SERVICE_ROLE
@@ -74,6 +75,7 @@ export class RealtimeGateway
       // 在 client 中挂载自定义数据
       client.data.projectId = payload.projectId;
       client.data.role = payload.role;
+      // 进入一个房间
       await client.join(`project:${payload.projectId}`);
     } catch {
       client.emit(REALTIME_EVENTS.ERROR, 'Invalid API key');
@@ -99,7 +101,6 @@ export class RealtimeGateway
     const projectId = client.data.projectId;
     if (!projectId || !tableName?.trim()) return;
 
-    // BUG：SQL 注入？？？
     const normalizedTable = tableName.trim();
     const room = `project:${projectId}:table:${normalizedTable}`;
 

@@ -74,7 +74,7 @@ export class RealtimeService implements OnModuleDestroy {
       }
     });
 
-    // 建立连接
+    // 与 neondatabase 建立连接
     await client.connect();
 
     // 数据库 pg_notify 广播时，Neon 客户端触发 'notification' 事件
