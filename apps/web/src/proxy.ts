@@ -40,6 +40,7 @@ export async function proxy(request: NextRequest) {
   const isProtected =
     pathname.startsWith('/organizations') || pathname.startsWith('/dashboard');
 
+  // 是否登录
   let isValid = false;
   if (accessToken && process.env.JWT_ACCESS_SECRET) {
     try {
@@ -52,7 +53,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // 是认证页并且 Token 有效
+  // 是认证页 并且 已经登录
   // 则重定向到 dashboard
   if (isAuthRoute && isValid) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
