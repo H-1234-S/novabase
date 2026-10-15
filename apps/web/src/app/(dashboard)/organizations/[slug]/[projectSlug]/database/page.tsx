@@ -1,4 +1,4 @@
-import { TableEditorClient } from '@/features/table-editor/table-editor-client';
+import { TableEditorClient } from '@/features/table-editor/components/table-editor-client';
 import {
   retrieveTablesFromApi,
   retrieveProjectDbSchema,
