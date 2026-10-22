@@ -40,7 +40,7 @@ export async function proxy(request: NextRequest) {
   const isProtected =
     pathname.startsWith('/organizations') || pathname.startsWith('/dashboard');
 
-  // 是否登录
+  // 校验 Access Token 是否有效
   let isValid = false;
   if (accessToken && process.env.JWT_ACCESS_SECRET) {
     try {

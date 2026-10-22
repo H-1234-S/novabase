@@ -363,6 +363,7 @@ export function TableEditorClient({
   );
 }
 
+// table-editor sidebar panel
 function TableListPanel({
   dbSchema,
   search,

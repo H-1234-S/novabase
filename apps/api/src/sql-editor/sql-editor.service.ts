@@ -118,6 +118,7 @@ export class SqlEditorService {
     try {
       const neonSql = this.getNeonClient();
 
+      // 在哪个 Schema 中执行对应的 SQL 语句
       // transaction 事物要么全成功要么全失败
       const results = await neonSql.transaction(
         (txn) => [

@@ -65,6 +65,7 @@ export function RealtimeClient({
       transports: ['websocket', 'polling'],
     });
 
+    // TODO：只有订阅关系补偿，没有订阅数据补偿
     socket.on('connect', () => {
       setConnected(true);
       // 重新连接后重新订阅
