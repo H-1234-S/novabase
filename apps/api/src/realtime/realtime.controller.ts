@@ -58,7 +58,11 @@ export class RealtimeController {
     @Param('tableName') tableName: string,
   ) {
     const project = await this.getProject(slug, projectSlug);
-    await this.triggerService.disableRealtime(project.dbSchema, tableName);
+    await this.triggerService.disableRealtime(
+      project.dbSchema,
+      project.id,
+      tableName,
+    );
     return { message: `Realtime disabled for ${tableName}` };
   }
 }

@@ -19,6 +19,48 @@ interface RealtimeClientProps {
   tables: string[];
 }
 
+type SubscriptionAck =
+  | {
+      ok: true;
+      cursor?: string;
+      gap?: 'none' | 'replayed' | 'expired';
+      replayed?: number;
+    }
+  | { ok: false; code: string; message: string };
+
+function emitSubscription(
+  socket: Socket,
+  event: string,
+  tableName: string,
+  since?: string,
+): Promise<SubscriptionAck> {
+  return new Promise((resolve) => {
+    const timeout = setTimeout(
+      () =>
+        resolve({
+          ok: false,
+          code: 'ACK_TIMEOUT',
+          message: 'Realtime server did not respond',
+        }),
+      5000,
+    );
+    const payload =
+      event === REALTIME_EVENTS.SUBSCRIBE
+        ? { table: tableName, since }
+        : tableName;
+    socket.emit(event, payload, (response: SubscriptionAck) => {
+      clearTimeout(timeout);
+      resolve(
+        response ?? {
+          ok: false,
+          code: 'INVALID_ACK',
+          message: 'Invalid server response',
+        },
+      );
+    });
+  });
+}
+
 const EVENT_COLORS: Record<string, string> = {
   INSERT: 'bg-green-100 text-green-700',
   UPDATE: 'bg-yellow-100 text-yellow-700',
@@ -44,11 +86,128 @@ export function RealtimeClient({
   const [subscribedTables, setSubscribedTables] = useState<Set<string>>(
     new Set(),
   );
+  const [pendingTables, setPendingTables] = useState<Set<string>>(new Set());
+  const [subscriptionErrors, setSubscriptionErrors] = useState<
+    Map<string, string>
+  >(new Map());
   const [events, setEvents] = useState<(RealtimeEvent & { id: string })[]>([]);
+  const [tableSnapshots, setTableSnapshots] = useState<Map<string, unknown[]>>(
+    new Map(),
+  );
+  const [snapshotSyncing, setSnapshotSyncing] = useState<Set<string>>(
+    new Set(),
+  );
+  const [snapshotSyncedAt, setSnapshotSyncedAt] = useState<Map<string, Date>>(
+    new Map(),
+  );
+  const [snapshotErrors, setSnapshotErrors] = useState<Map<string, string>>(
+    new Map(),
+  );
+  const [snapshotNotices, setSnapshotNotices] = useState<Map<string, string>>(
+    new Map(),
+  );
   // socket 实例
   const socketRef = useRef<Socket | null>(null);
   // 订阅表列表 ref
   const subscribedRef = useRef<Set<string>>(new Set());
+  const cursorRef = useRef<Map<string, string>>(new Map());
+  const snapshotRequestsRef = useRef<Map<string, AbortController>>(new Map());
+
+  const syncTableSnapshot = useCallback(
+    async (tableName: string) => {
+      snapshotRequestsRef.current.get(tableName)?.abort();
+      const controller = new AbortController();
+      snapshotRequestsRef.current.set(tableName, controller);
+      setSnapshotSyncing((prev) => new Set(prev).add(tableName));
+      setSnapshotErrors((prev) => {
+        const next = new Map(prev);
+        next.delete(tableName);
+        return next;
+      });
+
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api';
+      const url = new URL(
+        `${apiUrl.replace(/\/+$/, '')}/projects/${encodeURIComponent(projectSlug)}/rest/${encodeURIComponent(tableName)}`,
+      );
+      url.searchParams.set('limit', '1000');
+
+      try {
+        const response = await fetch(url, {
+          headers: { Authorization: `Bearer ${anonKey}` },
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          throw new Error(`Snapshot request failed (${response.status})`);
+        }
+        const rows: unknown = await response.json();
+        if (!Array.isArray(rows)) {
+          throw new Error('Snapshot response was not a row list');
+        }
+        if (snapshotRequestsRef.current.get(tableName) !== controller) return;
+        setTableSnapshots((prev) => new Map(prev).set(tableName, rows));
+        setSnapshotSyncedAt((prev) => new Map(prev).set(tableName, new Date()));
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setSnapshotErrors((prev) =>
+          new Map(prev).set(
+            tableName,
+            error instanceof Error ? error.message : 'Snapshot sync failed',
+          ),
+        );
+      } finally {
+        if (snapshotRequestsRef.current.get(tableName) === controller) {
+          snapshotRequestsRef.current.delete(tableName);
+          setSnapshotSyncing((prev) => {
+            const next = new Set(prev);
+            next.delete(tableName);
+            return next;
+          });
+        }
+      }
+    },
+    [anonKey, projectSlug],
+  );
+
+  const updateCursor = useCallback((tableName: string, cursor: string) => {
+    if (!/^[0-9]{1,20}$/.test(cursor)) return;
+    const previous = cursorRef.current.get(tableName);
+    if (!previous || BigInt(cursor) > BigInt(previous)) {
+      cursorRef.current.set(tableName, cursor);
+    }
+  }, []);
+
+  const handleSubscribeAck = useCallback(
+    (tableName: string, ack: SubscriptionAck) => {
+      if (!ack.ok) return false;
+      if (ack.cursor) updateCursor(tableName, ack.cursor);
+      if (ack.gap === 'expired') {
+        setSnapshotNotices((prev) =>
+          new Map(prev).set(
+            tableName,
+            'Replay window expired. Current data was refreshed; individual missed changes are unavailable.',
+          ),
+        );
+        void syncTableSnapshot(tableName);
+      } else if (ack.gap === 'replayed') {
+        setSnapshotNotices((prev) => {
+          const next = new Map(prev);
+          next.delete(tableName);
+          return next;
+        });
+        void syncTableSnapshot(tableName);
+      } else {
+        setSnapshotNotices((prev) => {
+          const next = new Map(prev);
+          next.delete(tableName);
+          return next;
+        });
+      }
+      return true;
+    },
+    [syncTableSnapshot, updateCursor],
+  );
 
   useEffect(() => {
     subscribedRef.current = subscribedTables;
@@ -56,6 +215,7 @@ export function RealtimeClient({
 
   // 进入页面即鉴权
   useEffect(() => {
+    const snapshotRequests = snapshotRequestsRef.current;
     // 建立 Socket 连接
     // 请求到达后端的 Gateway
     const socket = io(`${getRealtimeSocketBaseUrl()}/realtime`, {
@@ -65,24 +225,86 @@ export function RealtimeClient({
       transports: ['websocket', 'polling'],
     });
 
-    // TODO：只有订阅关系补偿，没有订阅数据补偿
     socket.on('connect', () => {
       setConnected(true);
       // 重新连接后重新订阅
       for (const tableName of subscribedRef.current) {
-        socket.emit(REALTIME_EVENTS.SUBSCRIBE, tableName);
+        void emitSubscription(
+          socket,
+          REALTIME_EVENTS.SUBSCRIBE,
+          tableName,
+          cursorRef.current.get(tableName),
+        ).then((ack) => {
+          if (!ack.ok) {
+            setSubscribedTables((prev) => {
+              const next = new Set(prev);
+              next.delete(tableName);
+              subscribedRef.current = next;
+              return next;
+            });
+            setSubscriptionErrors((prev) =>
+              new Map(prev).set(tableName, ack.message),
+            );
+          } else {
+            handleSubscribeAck(tableName, ack);
+            if (ack.gap === 'none') void syncTableSnapshot(tableName);
+          }
+        });
       }
     });
 
     socket.on('disconnect', () => setConnected(false));
 
-    socket.on(REALTIME_EVENTS.ERROR, (msg: string) => {
-      console.error('Realtime error:', msg);
-      setConnected(false);
-    });
+    socket.on(
+      REALTIME_EVENTS.ERROR,
+      (
+        msg: string | {
+          code?: string;
+          table?: string;
+          message?: string;
+          cursor?: string;
+        },
+      ) => {
+        console.error('Realtime error:', msg);
+        if (typeof msg === 'string') {
+          setConnected(false);
+        } else if (msg.table && msg.message) {
+          setSubscriptionErrors((prev) => {
+            const next = new Map(prev);
+            if (msg.code === 'LISTENER_CONNECTED') next.delete(msg.table!);
+            else next.set(msg.table!, msg.message!);
+            return next;
+          });
+          if (
+            msg.code === 'CURSOR_EXPIRED' ||
+            msg.code === 'CURSOR_REPLAY_FAILED'
+          ) {
+            if (msg.cursor) updateCursor(msg.table, msg.cursor);
+            setSnapshotNotices((prev) =>
+              new Map(prev).set(
+                msg.table!,
+                msg.code === 'CURSOR_EXPIRED'
+                  ? 'Replay window expired. Current data was refreshed; individual missed changes are unavailable.'
+                  : 'Missed events could not be replayed. Current data was refreshed instead.',
+              ),
+            );
+            void syncTableSnapshot(msg.table);
+          } else if (
+            msg.code === 'LISTENER_CONNECTED' &&
+            subscribedRef.current.has(msg.table)
+          ) {
+            void syncTableSnapshot(msg.table);
+          }
+        }
+      },
+    );
 
     // 接收服务端传来的信息
     socket.on(REALTIME_EVENTS.EVENT, (event: RealtimeEvent) => {
+      if (!/^[0-9]{1,20}$/.test(event.seq)) return;
+      const cursor = cursorRef.current.get(event.table);
+      if (cursor && BigInt(event.seq) <= BigInt(cursor)) return;
+      updateCursor(event.table, event.seq);
       setEvents((prev) => [
         { ...event, id: crypto.randomUUID() },
         // 最多一百条
@@ -94,47 +316,122 @@ export function RealtimeClient({
 
     return () => {
       socket.disconnect();
+      snapshotRequests.forEach((controller) => controller.abort());
+      snapshotRequests.clear();
     };
-  }, [anonKey]);
+  }, [anonKey, handleSubscribeAck, syncTableSnapshot, updateCursor]);
 
   // Switch Call Function
   const toggleTable = useCallback(
     async (tableName: string, enabled: boolean) => {
       const socket = socketRef.current;
-      if (!socket) return;
+      if (!socket || pendingTables.has(tableName)) return;
+
+      setPendingTables((prev) => new Set(prev).add(tableName));
+      setSubscriptionErrors((prev) => {
+        const next = new Map(prev);
+        next.delete(tableName);
+        return next;
+      });
 
       const apiUrl =
         process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api';
 
-      // 触发监听配置
-      if (enabled) {
-        const res = await fetch(
-          `${apiUrl}/orgs/${orgSlug}/projects/${projectSlug}/realtime/${tableName}/enable`,
-          { method: 'POST', credentials: 'include' },
+      try {
+        if (enabled) {
+          const response = await fetch(
+            `${apiUrl}/orgs/${orgSlug}/projects/${projectSlug}/realtime/${encodeURIComponent(tableName)}/enable`,
+            { method: 'POST', credentials: 'include' },
+          );
+          if (!response.ok)
+            throw new Error('Could not enable Realtime for this table');
+
+          const ack = await emitSubscription(
+            socket,
+            REALTIME_EVENTS.SUBSCRIBE,
+            tableName,
+          );
+          if (!ack.ok) throw new Error(ack.message);
+          setSubscribedTables((prev) => new Set([...prev, tableName]));
+          subscribedRef.current = new Set([...subscribedRef.current, tableName]);
+          handleSubscribeAck(tableName, ack);
+          if (ack.gap === 'none') await syncTableSnapshot(tableName);
+        } else {
+          const ack = await emitSubscription(
+            socket,
+            REALTIME_EVENTS.UNSUBSCRIBE,
+            tableName,
+          );
+          if (!ack.ok) throw new Error(ack.message);
+          setSubscribedTables((prev) => {
+            const next = new Set(prev);
+            next.delete(tableName);
+            subscribedRef.current = next;
+            return next;
+          });
+          snapshotRequestsRef.current.get(tableName)?.abort();
+          snapshotRequestsRef.current.delete(tableName);
+          cursorRef.current.delete(tableName);
+          setSnapshotSyncing((prev) => {
+            const next = new Set(prev);
+            next.delete(tableName);
+            return next;
+          });
+          setTableSnapshots((prev) => {
+            const next = new Map(prev);
+            next.delete(tableName);
+            return next;
+          });
+          setSnapshotSyncedAt((prev) => {
+            const next = new Map(prev);
+            next.delete(tableName);
+            return next;
+          });
+          setSnapshotErrors((prev) => {
+            const next = new Map(prev);
+            next.delete(tableName);
+            return next;
+          });
+          setSnapshotNotices((prev) => {
+            const next = new Map(prev);
+            next.delete(tableName);
+            return next;
+          });
+
+          const response = await fetch(
+            `${apiUrl}/orgs/${orgSlug}/projects/${projectSlug}/realtime/${encodeURIComponent(tableName)}/disable`,
+            { method: 'DELETE', credentials: 'include' },
+          );
+          if (!response.ok) {
+            throw new Error(
+              'Stopped listening, but could not disable the database trigger',
+            );
+          }
+        }
+      } catch (error) {
+        setSubscriptionErrors((prev) =>
+          new Map(prev).set(
+            tableName,
+            error instanceof Error
+              ? error.message
+              : 'Realtime operation failed',
+          ),
         );
-
-        if (!res.ok) return;
-
-        // 触发 Subscribe 事件；进行监听
-        socket.emit(REALTIME_EVENTS.SUBSCRIBE, tableName);
-        setSubscribedTables((prev) => new Set([...prev, tableName]));
-      } else {
-        // 触发 unsubscribe 事件，结束监听
-        socket.emit(REALTIME_EVENTS.UNSUBSCRIBE, tableName);
-        setSubscribedTables((prev) => {
+      } finally {
+        setPendingTables((prev) => {
           const next = new Set(prev);
           next.delete(tableName);
           return next;
         });
-
-        // 移除监听配置
-        await fetch(
-          `${apiUrl}/orgs/${orgSlug}/projects/${projectSlug}/realtime/${tableName}/disable`,
-          { method: 'DELETE', credentials: 'include' },
-        );
       }
     },
-    [orgSlug, projectSlug],
+    [
+      handleSubscribeAck,
+      orgSlug,
+      projectSlug,
+      pendingTables,
+      syncTableSnapshot,
+    ],
   );
 
   return (
@@ -196,7 +493,11 @@ export function RealtimeClient({
                           : 'text-muted-foreground',
                       )}
                     >
-                      {subscribedTables.has(table) ? 'Listening' : 'Off'}
+                      {pendingTables.has(table)
+                        ? 'Connecting…'
+                        : subscribedTables.has(table)
+                          ? 'Listening'
+                          : 'Off'}
                     </span>
                     {/* BUG：Toggle button issue */}
                     <Switch
@@ -204,10 +505,15 @@ export function RealtimeClient({
                       onCheckedChange={(checked) =>
                         void toggleTable(table, checked)
                       }
-                      disabled={!connected}
+                      disabled={!connected || pendingTables.has(table)}
                       className="cursor-pointer"
                     />
                   </div>
+                  {subscriptionErrors.has(table) && (
+                    <p className="mt-2 text-xs text-red-600">
+                      {subscriptionErrors.get(table)}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -215,6 +521,65 @@ export function RealtimeClient({
         </div>
 
         <div className="space-y-3 lg:col-span-2">
+          {subscribedTables.size > 0 && (
+            <section className="space-y-3 rounded-xl border border-border p-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-medium">Current data snapshots</h2>
+                <span className="text-xs text-muted-foreground">
+                Refreshed after subscribe or listener recovery; up to 1,000 rows per table
+                </span>
+              </div>
+              {[...subscribedTables].map((tableName) => {
+                const rows = tableSnapshots.get(tableName);
+                const syncedAt = snapshotSyncedAt.get(tableName);
+                return (
+                  <div key={tableName} className="rounded-lg bg-muted/40 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-mono text-xs">{tableName}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {snapshotSyncing.has(tableName)
+                            ? 'Syncing current data…'
+                            : syncedAt
+                              ? `${rows?.length ?? 0} rows · ${syncedAt.toLocaleTimeString()}`
+                              : 'No snapshot yet'}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={snapshotSyncing.has(tableName)}
+                          onClick={() => void syncTableSnapshot(tableName)}
+                        >
+                          Refresh
+                        </Button>
+                      </div>
+                    </div>
+                    {snapshotErrors.has(tableName) && (
+                      <p className="mt-2 text-xs text-red-600">
+                        Snapshot sync failed: {snapshotErrors.get(tableName)}
+                      </p>
+                    )}
+                    {snapshotNotices.has(tableName) && (
+                      <p className="mt-2 text-xs text-amber-700">
+                        {snapshotNotices.get(tableName)}
+                      </p>
+                    )}
+                    {rows && rows.length > 0 && (
+                      <pre className="mt-2 max-h-48 overflow-auto rounded bg-background p-2 font-mono text-xs">
+                        {JSON.stringify(rows.slice(0, 10), null, 2)}
+                      </pre>
+                    )}
+                    {rows?.length === 0 && (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        The table is empty.
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </section>
+          )}
+
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium">
               Event Feed
@@ -292,13 +657,21 @@ export function RealtimeClient({
                         {new Date(event.timestamp).toLocaleTimeString()}
                       </span>
                     </div>
-                    <pre className="overflow-x-auto rounded-lg bg-muted p-2 font-mono text-xs">
-                      {JSON.stringify(event.record, null, 2)}
-                    </pre>
+                    {event.record && (
+                      <pre className="overflow-x-auto rounded-lg bg-muted p-2 font-mono text-xs">
+                        {JSON.stringify(event.record, null, 2)}
+                      </pre>
+                    )}
                     {event.oldRecord && (
                       <pre className="overflow-x-auto rounded-lg bg-muted/50 p-2 font-mono text-xs text-muted-foreground">
                         {JSON.stringify(event.oldRecord, null, 2)}
                       </pre>
+                    )}
+                    {!event.record && (
+                      <p className="text-xs text-muted-foreground">
+                        Change notification only; row contents are not
+                        broadcast.
+                      </p>
                     )}
                   </div>
                 ))}

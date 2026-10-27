@@ -1,6 +1,6 @@
 # Realtime 深度审查测试计划
 
-本文件设计测试，不表示本轮已运行。测试环境不得使用开发/生产数据库凭据；RT-001 payload 只可指向 disposable database/table。
+本文件仍是完整回归计划。2026-10-22 实施 outbox/cursor 后，`pnpm --filter api test` 通过（5 files、19 tests），API `tsc --noEmit`、Realtime Oxlint、SDK `tsc --noEmit`、Realtime Web ESLint 通过。Web 全量 `tsc --noEmit` 被已有 `.next/types/validator.ts` 对缺失 `src/app/api/proxy/[...path]/route.js` 和 `src/app/auth/callback/route.js` 的引用阻断，与 Realtime 源码无关。上述 Vitest 全为 mock/unit，不使用数据库凭据；Socket.IO 集成、真实 PostgreSQL/Neon 驱动、payload 边界及容量测试尚未运行。测试环境不得使用开发/生产数据库凭据；RT-001 payload 只可指向 disposable database/table。
 
 ## 测试层次与前置条件
 
@@ -29,11 +29,18 @@
 | RT-T13 | PostgreSQL integration | 实时表含大 text/jsonb；写入 payload 计算为 7999 bytes、8000 bytes、超限 | 当前实现边界行为被记录；修复后业务 DML 成功，notification 维持小 payload | RT-005 |
 | RT-T14 | PostgreSQL integration | 同事务对同一 row 重复执行会产生相同 JSON event 的更新 | 记录 PostgreSQL 重复 payload 合并语义；若业务要求每次操作皆有事件，outbox sequence 保留每条 | RT-007 去重语义 |
 | RT-T15 | Socket+service integration | 订阅后仅断 DB 连接，保留 Socket.IO；期间写入，恢复 DB | service 自动恢复或给客户端明确状态；恢复后的新通知只投递一次 | RT-002 reconnect |
-| RT-T16 | Socket integration | 断 Socket.IO，断线期间提交 DML，再重连 | ACK 后订阅恢复；current-state snapshot/cursor 补上断线缺口；不宣称 durable event 时 UI 说明 gap | RT-007 |
+| RT-T16 | Web integration | 断 Socket.IO，断线期间提交 DML，再重连 | 客户端携带最后持久化 cursor；保留期内 ACK 标记 replayed 且按 seq 收到历史事件，过期时 ACK 标记 expired 并读取快照（最多 1000 行） | RT-007 |
 | RT-T17 | Capacity/load | anon key 连续订阅随机合法字符串并并发多 socket；逐步逼近配额 | per socket/project/global limit 生效；DB sessions/heap 不越设定预算；超额稳定拒绝 | RT-003 |
 | RT-T18 | Shutdown integration | 运行时存在 ready、connecting、retrying、closing channel，触发 Nest app.close() | 所有 client/timer 被 drain；无遗留 socket、Map 项或 teardown unhandled rejection | RT-002 shutdown |
 | RT-T19 | Trigger integration | 两个长度超过 PG 标识符可安全生成但前 56 字节相同的表，依次 enable | 验证当前 `${table}_notify` 函数标识符碰撞/第二次替换首函数的可能；修复后函数名唯一且事件各进各 channel | 补充检查：标识符截断 |
 | RT-T20 | Frontend integration | 模拟 subscribe ACK 成功/失败、unsubscribe HTTP 失败、重连 | UI 状态只跟随 ACK；HTTP trigger 与 socket listener 状态不一致时提供恢复/提示 | 客户端同步 |
+| RT-T21 | Web integration | 订阅后令 REST 快照请求成功、失败、慢响应；重连/DB listener 恢复触发重复同步；退订时中止请求 | 成功快照替换当前表快照；失败单独提示且实时订阅保持；旧请求不能覆盖较新快照；退订/卸载后不更新页面；可手动刷新 | RT-007 snapshot sync |
+| RT-T22 | Realtime service unit | mock outbox state / rows；cursor 在有效范围、超前、过期、结果超过 replay cap | 返回严格递增 seq；有效窗口回放；过期/超量返回 gap expired；非法或未来 cursor 拒绝 | RT-007 cursor 边界 |
+| RT-T23 | Gateway unit | 构造 LISTEN 与 replay 之间、首次 replay 与 room join 之间、room join 与第二次 replay 之间的提交 | 两次回放和实时 buffer 交叠期间每个 seq 最多直接投递一次；ACK cursor 不倒退 | RT-007 初始化竞态 |
+| RT-T24 | PostgreSQL integration | 两连接并发写同一 realtime 表，控制事务提交顺序；随后按 cursor 回放 | 同表 seq 顺序不越过未提交的较早事件；rollback 无 outbox 行/通知；变更与业务事务原子提交 | RT-007 同表序列化 |
+| RT-T25 | PostgreSQL integration | 创建两张表并交错产生 outbox seq；只删除其中一表的早期 outbox 行，然后分别 replay | 删除水位按 table 维护；另一表的全局 seq 空洞不会误报 expired | RT-007 过期水位 |
+| RT-T26 | PostgreSQL/Neon integration | 触发保留清理；并发跑两个 API 实例；制造超过一批的过期数据 | 每条清理 SQL 原子取得 `pg_try_advisory_xact_lock` 后最多删 1000 行；仅一个实例获得锁；每轮最多 10 批，下一轮继续 | RT-007 清理并发/负载 |
+| RT-T27 | PostgreSQL integration | enable 新 trigger 后分别 commit/rollback INSERT/UPDATE/DELETE，并检查 outbox payload | 同一事务内写 outbox 和业务变更；只提交的数据可回放；payload 不含旧/新行内容 | RT-007 outbox 事务一致性 |
 
 ## 稳定复现技巧
 
@@ -42,6 +49,7 @@
 - 对 disconnect race，在 subscribe 进入 service 后立即断开 Socket，再 resolve LISTEN；最后检查 map/callback/client 数，不只检查 room 是否空。
 - 对 unhandled rejection，在 test process 监听 `unhandledRejection`；确保 UNLISTEN 和 end reject 后无逃逸异常。
 - 对 SQL 注入，Mock 仅断言危险值未抵达 `client.query`；必须再用 Neon 1.1.0 和真实 PG 隔离库证实 query protocol 行为。
+- Outbox 的 SQL 字符串 mock 只验证构造与分支；必须用真实 PostgreSQL 验证 trigger DDL、触发器删除水位、事务级 advisory lock 和 CTE 清理语义。Neon HTTP provider 需另验单 SQL statement 执行方式。
 - 对 payload byte boundary，按 `Buffer.byteLength(payload, 'utf8')` 计算，而不是 JS 字符长度；Unicode payload 需要测试。
 
 ## 验收门槛

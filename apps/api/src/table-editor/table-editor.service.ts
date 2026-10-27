@@ -22,6 +22,13 @@ export class TableEditorService {
     }
   }
 
+  private assertUserTableName(name: string): void {
+    this.assertSafeIdentifier(name, 'table name');
+    if (name.startsWith('_rt_')) {
+      throw new BadRequestException('Realtime internal tables are reserved');
+    }
+  }
+
   // 数据库类型映射列类型
   private mapPgTypeToColumnType(pgType: string): ColumnType {
     const map: Record<string, ColumnType> = {
@@ -101,6 +108,7 @@ export class TableEditorService {
        FROM information_schema.tables
        WHERE table_schema = '${schema}'
          AND table_type = 'BASE TABLE'
+         AND table_name NOT LIKE '\\_rt\\_%' ESCAPE '\\'
        ORDER BY table_name ASC`,
     );
 
@@ -114,7 +122,7 @@ export class TableEditorService {
     projectSlug: string,
     tableName: string,
   ): Promise<TableInfo> {
-    this.assertSafeIdentifier(tableName, 'table name');
+    this.assertUserTableName(tableName);
     const schema = await this.getProjectSchema(orgSlug, projectSlug);
 
     // 获取列信息
@@ -216,7 +224,7 @@ export class TableEditorService {
     limit = 100,
     offset = 0,
   ): Promise<{ rows: Record<string, unknown>[]; count: number }> {
-    this.assertSafeIdentifier(tableName, 'table name');
+    this.assertUserTableName(tableName);
     const schema = await this.getProjectSchema(orgSlug, projectSlug);
 
     try {
@@ -249,7 +257,7 @@ export class TableEditorService {
     projectSlug: string,
     dto: CreateTableDto,
   ): Promise<void> {
-    this.assertSafeIdentifier(dto.name, 'table name');
+    this.assertUserTableName(dto.name);
     const schema = await this.getProjectSchema(orgSlug, projectSlug);
 
     // CreateColumnDto[] 是数组可能是联合主键/复合主键
@@ -261,7 +269,7 @@ export class TableEditorService {
       this.assertSafeIdentifier(col.name, 'column name');
 
       if (col.foreignKeyTable) {
-        this.assertSafeIdentifier(col.foreignKeyTable, 'foreign key table');
+        this.assertUserTableName(col.foreignKeyTable);
       }
       if (col.foreignKeyColumn) {
         this.assertSafeIdentifier(col.foreignKeyColumn, 'foreign key column');
@@ -320,7 +328,7 @@ export class TableEditorService {
     projectSlug: string,
     tableName: string,
   ): Promise<void> {
-    this.assertSafeIdentifier(tableName, 'table name');
+    this.assertUserTableName(tableName);
     const schema = await this.getProjectSchema(orgSlug, projectSlug);
     await this.drizzle.db.execute(
       `DROP TABLE IF EXISTS "${schema}"."${tableName}"`,
@@ -334,7 +342,7 @@ export class TableEditorService {
     tableName: string,
     dto: AddColumnDto,
   ): Promise<void> {
-    this.assertSafeIdentifier(tableName, 'table name');
+    this.assertUserTableName(tableName);
     this.assertSafeIdentifier(dto.name, 'column name');
     const schema = await this.getProjectSchema(orgSlug, projectSlug);
 
@@ -355,7 +363,7 @@ export class TableEditorService {
     tableName: string,
     columnName: string,
   ): Promise<void> {
-    this.assertSafeIdentifier(tableName, 'table name');
+    this.assertUserTableName(tableName);
     this.assertSafeIdentifier(columnName, 'column name');
     const schema = await this.getProjectSchema(orgSlug, projectSlug);
     await this.drizzle.db.execute(
@@ -372,7 +380,7 @@ export class TableEditorService {
     pkValue: string,
     updates: Record<string, unknown>,
   ): Promise<void> {
-    this.assertSafeIdentifier(tableName, 'table name');
+    this.assertUserTableName(tableName);
     this.assertSafeIdentifier(pkColumn, 'primary key column');
     Object.keys(updates).forEach((col) =>
       this.assertSafeIdentifier(col, 'column name'),

@@ -5,10 +5,17 @@ import { RealtimeController } from './realtime.controller.js';
 import { TriggerService } from './trigger.service.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { OrgRoleGuard } from '../auth/guards/org-role.guard.js';
+import { RealtimeOutboxService } from './realtime-outbox.service.js';
 
 @Module({
   imports: [AuthModule],
-  providers: [RealtimeGateway, RealtimeService, TriggerService, OrgRoleGuard],
+  providers: [
+    RealtimeGateway,
+    RealtimeService,
+    RealtimeOutboxService,
+    TriggerService,
+    OrgRoleGuard,
+  ],
   controllers: [RealtimeController],
 })
 export class RealtimeModule {}

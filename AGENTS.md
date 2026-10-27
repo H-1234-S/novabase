@@ -1,3 +1,19 @@
+<!-- GENERAL CODING GUIDELINES START -->
+
+# Jo's Thought Imprint
+
+1. Fail fast and loudly: Do not write fallback logic unless it is explicitly required.
+2. Let exceptions/errors bubble up early: Do not handle errors inside business layers.
+3. Valid test: Prove a bug/problem exists by failing it. Only write tests that will passprove nothing.
+4. Add comments to externally exposed types, interfaces, functions, and classes, and add functional comments on key logic branches.
+5. Reuse utility functions from `utils` whenever possible. If a common function does not exist but can be extracted for reuse, add it to `utils` and reuse it there.
+6. When writing unit tests, mirror the source code directory structure strictly. Each unit test file must only test the corresponding source file's functionality.
+7. Always use source types from the owning library/module. Do not create local duplicate types or cast values to local stand-in types just to solve TypeScript issues.
+8. Avoid abstraction layers that do not simplify the code or preserve a real boundary. Prefer calling the owning module/service directly over passing broad wrapper objects through layers.
+9. Do not write explicit function return types unless TypeScript cannot infer them correctly or the annotation is required to preserve a public contract.
+10. Do not extract one-off helper functions unless they preserve a real boundary, hide meaningful complexity, or are expected to be reused. Prefer inlining simple single-use logic.
+<!-- GENERAL CODING GUIDELINES END -->
+
 # Novabase 工程指南（AI Agent）
 
 本文件是仓库级开发约定。修改代码前先检查工作树及目标目录内更具体的 `AGENTS.md`；保留已有用户改动，不要用格式化、生成或重置命令覆盖无关文件。本文中的架构描述依据当前仓库源码；产品策略或部署配置未由源码确定的部分会明确标成待确认。
@@ -6,15 +22,15 @@
 
 这是由 pnpm workspace 管理的 monorepo（`pnpm-workspace.yaml`：`apps/*`、`packages/*`）。根目录 `package.json` 只提供并行开发入口；没有根级 lint、test 或 build 脚本。
 
-| 路径 | 职责与入口 |
-| --- | --- |
-| `apps/api/` | NestJS API。启动入口 `src/main.ts`，模块组装在 `src/app.module.ts`。业务模块包括 `auth`、`orgs`、`members`、`projects`、`project-api`、`project-auth`、`table-editor`、`sql-editor`、`realtime`、`storage`。 |
-| `apps/web/` | Next.js App Router 管理界面。路由在 `src/app/`，按功能拆分的服务端/客户端逻辑在 `src/features/`，请求封装在 `src/lib/axios.ts`，会话路由代理在 `src/proxy.ts`。本目录另有必须遵循的 [apps/web/AGENTS.md](apps/web/AGENTS.md)。 |
-| `packages/types/` | API/Web 共享 TypeScript 类型。 |
-| `packages/constants/` | 共享常量，例如 cookie 名称和项目 key 角色。 |
-| `packages/novabase/` | 对外 JavaScript SDK；修改 `src/`，发布产物由 `tsdown` 生成至 `dist/`，不要手改 `dist/`。 |
-| `apps/api/src/db/schema/`、`apps/api/drizzle/` | Drizzle schema 定义与已提交 PostgreSQL migration。 |
-| `docs/` | 功能说明；`fixes/` 是代码审查及待修问题文档，不应当作实现规范或源码。 |
+| 路径                                           | 职责与入口                                                                                                                                                                                                                     |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/api/`                                    | NestJS API。启动入口 `src/main.ts`，模块组装在 `src/app.module.ts`。业务模块包括 `auth`、`orgs`、`members`、`projects`、`project-api`、`project-auth`、`table-editor`、`sql-editor`、`realtime`、`storage`。                   |
+| `apps/web/`                                    | Next.js App Router 管理界面。路由在 `src/app/`，按功能拆分的服务端/客户端逻辑在 `src/features/`，请求封装在 `src/lib/axios.ts`，会话路由代理在 `src/proxy.ts`。本目录另有必须遵循的 [apps/web/AGENTS.md](apps/web/AGENTS.md)。 |
+| `packages/types/`                              | API/Web 共享 TypeScript 类型。                                                                                                                                                                                                 |
+| `packages/constants/`                          | 共享常量，例如 cookie 名称和项目 key 角色。                                                                                                                                                                                    |
+| `packages/novabase/`                           | 对外 JavaScript SDK；修改 `src/`，发布产物由 `tsdown` 生成至 `dist/`，不要手改 `dist/`。                                                                                                                                       |
+| `apps/api/src/db/schema/`、`apps/api/drizzle/` | Drizzle schema 定义与已提交 PostgreSQL migration。                                                                                                                                                                             |
+| `docs/`                                        | 功能说明；`fixes/` 是代码审查及待修问题文档，不应当作实现规范或源码。                                                                                                                                                          |
 
 API 在 `main.ts` 设置全局 `/api` 前缀、cookie parser、全局 `ValidationPipe`（`transform`、`whitelist`、`forbidNonWhitelisted`）、CORS 和 Socket.IO adapter；Swagger 挂在 `/api`。添加控制器或改变路由时同时考虑全局前缀和 Swagger 行为。`AppModule` 中 `ConfigModule` 为全局模块，`DbModule` 通过全局 `DrizzleService` 提供数据库访问。
 
@@ -44,26 +60,26 @@ API 在 `main.ts` 设置全局 `/api` 前缀、cookie parser、全局 `Validatio
 
 - Realtime 涉及 Socket.IO 握手、项目 key、PostgreSQL `LISTEN/NOTIFY`、动态 channel、触发器及客户端重订阅，改动前必须读 [fixes/realtime/README.md](fixes/realtime/README.md) 和对应的 `execution-flow.md`、`recommendations.md`；这些是审查材料，需重新对照当前源码，不能视作已实施方案。
 - Storage 由 `apps/api/src/storage/` 的 controller/service 与 UploadThing 集成。外部上传/删除与本地数据库不是天然原子事务；处理失败时检查补偿、重试和幂等性，避免宣称跨系统事务。
-- 出站代理配置在 `apps/api/src/main.ts`，仅环境提供 HTTP(S)_PROXY 时配置 Undici dispatcher，并替换全局 fetch。修改网络依赖、上传、邮件或 Neon HTTP 请求时，检查 `NO_PROXY` 和 dispatcher/fetch 版本一致性，避免改变全局出站请求行为。
+- 出站代理配置在 `apps/api/src/main.ts`，仅环境提供 HTTP(S)\_PROXY 时配置 Undici dispatcher，并替换全局 fetch。修改网络依赖、上传、邮件或 Neon HTTP 请求时，检查 `NO_PROXY` 和 dispatcher/fetch 版本一致性，避免改变全局出站请求行为。
 
 ## 3. 开发命令
 
 使用 pnpm workspace 命令，不要在子应用切换 npm/yarn 锁文件。根目录 dev 命令会同时启动 API 和 Web。
 
-| 目的 | 命令 | 说明 |
-| --- | --- | --- |
-| 同时开发 | `pnpm dev` | 根脚本使用 `concurrently` 启动 API watch 和 Web dev server。 |
-| 单独启动 API | `pnpm dev:api` | 实际执行 `nest start --watch`。 |
-| 单独启动 Web | `pnpm dev:web` | Next dev，端口 3001。 |
-| API 构建 | `pnpm --filter api build` | Nest build。 |
-| API 单测 | `pnpm --filter api test` | Vitest `**/*.spec.ts`；现有测试很少，不能据此认为业务模块覆盖充分。 |
-| API 覆盖率 | `pnpm --filter api test:cov` | Vitest coverage；运行前检查本地测试配置及所需外部依赖。 |
-| API E2E | `pnpm --filter api test:e2e` | 使用 `vitest.config.e2e.ts` 查找 `**/*.e2e-spec.ts`。当前仓库未发现 E2E spec，不要把该脚本存在等同于 E2E 覆盖存在。 |
-| API lint | `pnpm --filter api lint` | package 脚本是 `oxlint src/ test/`；当前文件树未发现 `apps/api/test/`，执行前确认脚本路径问题。不要悄悄把失败记成 lint 通过。 |
-| Web lint | `pnpm --filter web lint` | 执行 ESLint。 |
-| Web build | `pnpm --filter web build` | Next production build。 |
-| Web 类型检查 | `pnpm --filter web exec tsc --noEmit` | package 没有 typecheck script；这是依据其 TypeScript 配置的直接检查命令。 |
-| SDK build | `pnpm --filter @hushaoqiong/novabase build` | `tsdown` 编译 `packages/novabase/src`。 |
+| 目的         | 命令                                        | 说明                                                                                                                          |
+| ------------ | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| 同时开发     | `pnpm dev`                                  | 根脚本使用 `concurrently` 启动 API watch 和 Web dev server。                                                                  |
+| 单独启动 API | `pnpm dev:api`                              | 实际执行 `nest start --watch`。                                                                                               |
+| 单独启动 Web | `pnpm dev:web`                              | Next dev，端口 3001。                                                                                                         |
+| API 构建     | `pnpm --filter api build`                   | Nest build。                                                                                                                  |
+| API 单测     | `pnpm --filter api test`                    | Vitest `**/*.spec.ts`；现有测试很少，不能据此认为业务模块覆盖充分。                                                           |
+| API 覆盖率   | `pnpm --filter api test:cov`                | Vitest coverage；运行前检查本地测试配置及所需外部依赖。                                                                       |
+| API E2E      | `pnpm --filter api test:e2e`                | 使用 `vitest.config.e2e.ts` 查找 `**/*.e2e-spec.ts`。当前仓库未发现 E2E spec，不要把该脚本存在等同于 E2E 覆盖存在。           |
+| API lint     | `pnpm --filter api lint`                    | package 脚本是 `oxlint src/ test/`；当前文件树未发现 `apps/api/test/`，执行前确认脚本路径问题。不要悄悄把失败记成 lint 通过。 |
+| Web lint     | `pnpm --filter web lint`                    | 执行 ESLint。                                                                                                                 |
+| Web build    | `pnpm --filter web build`                   | Next production build。                                                                                                       |
+| Web 类型检查 | `pnpm --filter web exec tsc --noEmit`       | package 没有 typecheck script；这是依据其 TypeScript 配置的直接检查命令。                                                     |
+| SDK build    | `pnpm --filter @hushaoqiong/novabase build` | `tsdown` 编译 `packages/novabase/src`。                                                                                       |
 
 API `test` / `test:e2e` / lint 脚本来自 `apps/api/package.json`，测试配置来自 `apps/api/vitest.config.ts` 与 `vitest.config.e2e.ts`。在 API 源码使用 NodeNext ESM，遵循现有相对 import 的 `.js` 后缀；Web 使用 `@/*` 指向 `apps/web/src/*`。Web 没有独立 test script，不能假设已有浏览器测试框架。
 

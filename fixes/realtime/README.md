@@ -1,5 +1,24 @@
 # Realtime 第二轮深度审查摘要
 
+## 修复实施状态（2026-10-22）
+
+以下状态来自当前工作区实现和本地 mock/unit 验证；它们不代表已在 Neon/PostgreSQL 上完成集成验收。
+
+| 编号 | 当前状态 | 实现或剩余工作 |
+|---|---|---|
+| RT-001 | 已修复（真实 DB 尚待验证） | Gateway/Service 仅接受受限标识符；监听 channel 改为固定长度服务器 hash；只允许已启用表；动态 LISTEN/UNLISTEN identifier 使用引用。测试验证恶意 payload 不建连接。隔离 Neon/PG 的驱动验证及独立最小权限 `REALTIME_DATABASE_URL` 仍需部署验证。 |
+| RT-002 | 已实现恢复和清理（真实驱动待验） | connecting entry 单飞、connect/LISTEN 失败清理、运行时 error/end 退避重连、UNLISTEN/end 和 shutdown 清理。退避延迟上限 30 秒并持续重试；Neon 真实断线行为尚未验证。 |
+| RT-003 | 已实施应用层上限 | 仅可订阅实际启用的表；每 socket 10 个订阅，默认每 API 进程每项目 200 个订阅、200 个 channel，全进程 2000 个订阅；每项目 500 个 socket、每进程 2000 个 socket。Service 限额可由 `REALTIME_MAX_SUBSCRIPTIONS`、`REALTIME_MAX_SUBSCRIPTIONS_PER_PROJECT`、`REALTIME_MAX_CHANNELS` 调整；Gateway socket 上限可由 `REALTIME_MAX_SOCKETS_PER_PROJECT`、`REALTIME_MAX_SOCKETS` 调整。多实例部署的总数据库连接/Socket 预算为单实例上限乘实例数，仍需用目标 Neon 配额校准默认值。 |
+| RT-004 | 行数据泄露已消除；ACL 策略待产品确认 | 新 trigger 不再广播 NEW/OLD 行，只广播 project/table/operation/time 元数据。持有项目 anon key 的客户端仍可订阅被显式启用表并观察变更元数据；是否需要仅管理端或终端用户级 ACL 仍需产品决策。 |
+| RT-005 | 已修复（PG 集成待验） | Trigger payload 固定为小型 invalidation event，避免完整行超出 NOTIFY 限制并导致业务事务失败。 |
+| RT-006 | 已修复并有竞态测试 | Service 同 channel 共用初始化 Promise；Gateway 在 await 前登记 pending 状态，退订/断连后完成的订阅会被撤销。 |
+| RT-007 | 已增加 outbox/cursor 回放（Neon/PostgreSQL 集成待验） | 每个项目 schema 使用事务 outbox 保存紧凑变更事件；订阅可携带 `since` cursor，服务端在订阅前及入房后回放并按 seq 去重。保留期内可补逐条事件，超期返回 `CURSOR_EXPIRED` 并由 Web UI 快照重同步。SDK 暴露 cursor/error callback。 |
+| RT-008 | 已修复（PG 标识符验证待验） | channel/function/trigger 使用短 hash 名，避免 PostgreSQL 63-byte identifier 截断碰撞。 |
+
+**旧 trigger rollout 注意**：已存在的旧版 trigger 仍发送旧 channel 和完整行 payload。服务端只认新 hash trigger；为升级某表，需通过管理端再次启用该表 Realtime（调用现有 enable endpoint），它会替换该表旧 trigger。完成所有表迁移前，旧 trigger 仍可能因大行 payload 使 DML 失败。请在目标部署安排逐表迁移并优先检查大字段表。
+
+**深度审查时的验证记录（历史）**：当时只做源码审查，没有运行测试或 SQL；下方“实施状态”和本目录的 `outbox-implementation-report.md` 记录之后的修复与验证。原始问题统计反映修复前发现，不应当作当前未修复问题数。
+
 ## 审查范围
 
 基于当前工作区源码和依赖锁版本审查：
@@ -10,7 +29,7 @@
 - `@neondatabase/serverless` 1.1.0 本地安装代码；Socket.IO server/client 锁定 4.8.4（lockfile 同时存在 4.8.3 的依赖项）
 - PostgreSQL 官方 protocol、LISTEN/NOTIFY 和 identifier 规则
 
-本轮只读源码/文档/依赖，不运行应用、测试或 SQL，不修改业务源码。现有未提交源码改动保留。详细调用图见 `execution-flow.md`。
+原始深度审查轮只读源码/文档/依赖，不运行应用、测试或 SQL。后续实施记录见 `outbox-implementation-report.md`。详细审查调用图见 `execution-flow.md`。
 
 ## 问题状态与统计
 
@@ -42,7 +61,7 @@
 2. **修复状态基座**：RT-006 single-flight channel entry 和 pending socket cancel；再做 RT-002 error/close、退避、shutdown 生命周期。否则 retry 可能放大竞态/连接风暴。
 3. **定授权策略**：产品确认 enable 是否公开发布；按结论落实 RT-004 表/字段 ACL。
 4. **调整 payload**：RT-005 将全行通知改为小型 key/invalidation；处理 RT-008 唯一函数名与旧 trigger 迁移。
-5. **明确事件语义**：RT-007 增加 subscribe/unsubscribe ACK 和 reconnect snapshot；若要求不丢事件，再设计事务 outbox/cursor，不能只依赖 NOTIFY。
+5. **验证持久补偿**：RT-007 已有 outbox/cursor 回放及过期快照降级。优先在真实 PostgreSQL/Neon 验证触发器事务一致性、并发 cursor 顺序、过期水位和清理锁，再决定是否需要更强的消费者 offset/投递确认语义。
 
 每个问题的逐项实现思路、替代方案、风险和验收见 `recommendations.md`；执行顺序需配合 `test-plan.md`。
 

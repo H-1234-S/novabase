@@ -55,12 +55,31 @@ Supported filters: `eq` `neq` `gt` `gte` `lt` `lte` `like` `ilike` `is`.
 
 ```ts
 const unsubscribe = novabase.realtime.subscribe('posts', (event) => {
-  console.log(event);
+  console.log(event.seq, event.type, event.table);
+}, {
+  onError: (error) => {
+  console.error('Realtime subscription failed:', error.code, error.message);
+  },
 });
 
 // later
 unsubscribe();
 ```
+
+Realtime events contain metadata only (`record` is `null`) and include `seq`, a PostgreSQL bigint encoded as a decimal string. The server stores metadata in a per-project-schema transactional outbox and replays retained events after the last cursor on reconnect. Consumers should de-duplicate by `seq` if they persist or share cursors. If the requested cursor is outside the retention window or replay exceeds the configured limit, the SDK reports `CURSOR_EXPIRED` through `onError`; fetch a fresh snapshot and pass its last processed cursor on the next subscription if your application persists cursors.
+
+The cursor held by this SDK instance is in memory. To resume after a page reload or process restart, persist the latest successfully processed `event.seq` in your application and provide it as `since`:
+
+```ts
+const unsubscribe = novabase.realtime.subscribe('posts', onEvent, {
+  since: savedCursor,
+  onError: ({ code }) => {
+    if (code === 'CURSOR_EXPIRED') void reloadPosts();
+  },
+});
+```
+
+Delivery is at least once within the retained replay window, not exactly once. A replay can overlap a live notification; consumers should make handling idempotent. The default retention is 24 hours and the replay cap defaults to 500 events (hard maximum 1,000). Expired or oversized gaps require snapshot reconciliation; no row contents or durable event payloads are exposed.
 
 ### Storage
 

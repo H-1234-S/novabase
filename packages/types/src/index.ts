@@ -191,10 +191,15 @@ export interface QueryHistoryItem {
 export type RealtimeEventType = 'INSERT' | 'UPDATE' | 'DELETE';
 
 export interface RealtimeEvent {
+  version?: 1;
+  /** PostgreSQL bigint cursor encoded as a decimal string. */
+  seq: string;
   type: RealtimeEventType;
   table: string;
-  record: Record<string, unknown>;
-  oldRecord?: Record<string, unknown>; // only on UPDATE and DELETE
+  /** Realtime sends invalidation events, not row contents. */
+  record?: Record<string, unknown> | null;
+  /** Legacy row data is omitted by current invalidation events. */
+  oldRecord?: Record<string, unknown>;
   projectId: string;
   timestamp: string;
 }

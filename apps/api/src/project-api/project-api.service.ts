@@ -19,6 +19,13 @@ export class ProjectApiService {
     }
   }
 
+  private assertUserTableName(name: string): void {
+    this.assertSafeIdentifier(name, 'table name');
+    if (name.startsWith('_rt_')) {
+      throw new BadRequestException('Realtime internal tables are reserved');
+    }
+  }
+
   private formatLiteral(value: unknown): string {
     if (value === null || value === undefined) return 'NULL';
     if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
@@ -86,7 +93,7 @@ export class ProjectApiService {
     tableName: string,
     rawParams: Record<string, string>,
   ) {
-    this.assertSafeIdentifier(tableName, 'table name');
+    this.assertUserTableName(tableName);
     const schema = await this.resolveProjectSchema(projectId, projectSlug);
     const { select, filters, orderBy, limit, offset } =
       parseQueryParams(rawParams);
@@ -118,7 +125,7 @@ export class ProjectApiService {
     tableName: string,
     body: Record<string, unknown>,
   ) {
-    this.assertSafeIdentifier(tableName, 'table name');
+    this.assertUserTableName(tableName);
     const schema = await this.resolveProjectSchema(projectId, projectSlug);
 
     const entries = Object.entries(body);
@@ -148,7 +155,7 @@ export class ProjectApiService {
     rowId: string,
     body: Record<string, unknown>,
   ) {
-    this.assertSafeIdentifier(tableName, 'table name');
+    this.assertUserTableName(tableName);
     const schema = await this.resolveProjectSchema(projectId, projectSlug);
     const pkColumn = await this.getPrimaryKeyColumn(schema, tableName);
 
@@ -181,7 +188,7 @@ export class ProjectApiService {
     tableName: string,
     rowId: string,
   ) {
-    this.assertSafeIdentifier(tableName, 'table name');
+    this.assertUserTableName(tableName);
     const schema = await this.resolveProjectSchema(projectId, projectSlug);
     const pkColumn = await this.getPrimaryKeyColumn(schema, tableName);
 

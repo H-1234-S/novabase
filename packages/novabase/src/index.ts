@@ -11,7 +11,11 @@ export { NovabaseClient } from './client';
 export { QueryBuilder, NovabaseDb } from './db';
 export type { QueryResult } from './db';
 export { NovabaseRealtime } from './realtime';
-export type { RealtimeCallback } from './realtime';
+export type {
+  RealtimeCallback,
+  RealtimeSubscribeOptions,
+  RealtimeSubscriptionError,
+} from './realtime';
 export { NovabaseStorage } from './storage';
 export { NovabaseAuth } from './auth';
 export type {
