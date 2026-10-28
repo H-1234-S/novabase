@@ -5,6 +5,7 @@ import slugify from 'slugify';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { DrizzleService } from '../db/drizzle.service.js';
+import { provisionProjectRole } from '../db/project-role.js';
 import { projects, organizations, orgMembers } from '../db/schema/index.js';
 import { CreateProjectDto } from './dto/create-project.dto.js';
 import { PROJECT_KEY_ROLES } from '@novabase/constants';
@@ -42,9 +43,8 @@ export class ProjectsService {
   }
 
   private async provisionSchema(dbSchema: string): Promise<void> {
-    // 在数据库中创建一个命名空间
-    // IF NOT EXISTS 幂等操作
-    await this.drizzle.db.execute(`CREATE SCHEMA IF NOT EXISTS "${dbSchema}"`);
+    // 创建命名空间，并同步创建只拥有该 schema 权限的项目角色（SQL Editor 的隔离边界）
+    await provisionProjectRole(this.drizzle.db, dbSchema);
   }
 
   async getProjectsForOrg(orgSlug: string, userId: string) {

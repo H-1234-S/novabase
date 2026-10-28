@@ -9,6 +9,7 @@ import type {
 } from '@neondatabase/serverless';
 import { and, desc, eq } from 'drizzle-orm';
 import { DrizzleService } from '../db/drizzle.service.js';
+import { projectRoleName, quoteIdentifier } from '../db/project-role.js';
 import { projects, organizations, queryHistory } from '../db/schema/index.js';
 import type { QueryResult } from '@novabase/types';
 
@@ -110,6 +111,9 @@ export class SqlEditorService {
     }
 
     this.assertSafeIdentifier(project.dbSchema, 'project schema');
+    // 项目角色名由 schema 确定性派生，见 db/project-role.ts
+    const projectRole = projectRoleName(project.dbSchema);
+    this.assertSafeIdentifier(projectRole, 'project role');
 
     // 起始执行时间
     const start = Date.now();
@@ -122,8 +126,12 @@ export class SqlEditorService {
       // transaction 事物要么全成功要么全失败
       const results = await neonSql.transaction(
         (txn) => [
-          // 设置本地查询路径
-          txn`SET LOCAL search_path TO ${txn.unsafe(`"${project.dbSchema}", public`)}`,
+          // 第一层（唯一可靠的一层）：整个事务以项目角色身份执行，由数据库内核拦截越界访问。
+          // 必须是第一条：SET LOCAL ROLE 失败会中止整批事务，用户 SQL 不会退回到 owner 身份执行。
+          txn`SET LOCAL ROLE ${txn.unsafe(quoteIdentifier(projectRole))}`,
+          // 第二层：只是名字解析顺序，让用户可省略 schema 前缀。不再包含 public，
+          // 避免缺表时静默落到控制面 schema（public 的 USAGE 已在 migration 中从 PUBLIC 收回）。
+          txn`SET LOCAL search_path TO ${txn.unsafe(quoteIdentifier(project.dbSchema))}`,
           // 执行用户输入的任意 SQL
           txn`${txn.unsafe(statement)}`,
         ],
