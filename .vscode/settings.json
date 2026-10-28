@@ -30,9 +30,10 @@
   },
   "prettier.requireConfig": true,
   "eslint.workingDirectories": [
-    { "directory": "apps/web", "changeProcessCWD": true },
-    { "directory": "apps/api", "changeProcessCWD": true }
+    { "directory": "apps/web", "changeProcessCWD": true }
   ],
+  "oxc.enable": true,
+  "oxc.lint.run": "onSave",
   "commentTranslate.source": "Bing",
   "cSpell.words": ["ILIKE", "TIMESTAMPTZ", "uploadthing"]
 }

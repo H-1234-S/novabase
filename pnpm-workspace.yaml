@@ -1,6 +1,18 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# 跨包共享依赖统一在此声明版本，各 package.json 用 "catalog:" 引用。
+# 目的：避免同一依赖在仓库内出现多个版本（此前 typescript 曾同时存在 5 / 6 / 7 三个版本）。
+catalog:
+  '@types/node': ^24.0.0
+  '@vitest/coverage-v8': ^4.1.2
+  prettier: ^3.9.9
+  socket.io-client: ^4.8.4
+  typescript: ^6.0.3
+  uploadthing: ^7.7.4
+  vitest: ^4.1.2
+
 allowBuilds:
   '@scarf/scarf': true
   bcrypt: true
