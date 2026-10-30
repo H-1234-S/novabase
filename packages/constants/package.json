@@ -2,6 +2,20 @@
   "name": "@novabase/constants",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "main": "./src/index.ts",
-  "type": "module"
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "sideEffects": false,
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
 }

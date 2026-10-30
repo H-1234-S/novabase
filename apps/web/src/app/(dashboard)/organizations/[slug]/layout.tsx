@@ -14,7 +14,9 @@ export default async function OrgLayout({
   return (
     <>
       <TopNav projects={projects} />
-      <main className="flex-1 overflow-y-auto p-6">{children}</main>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        {children}
+      </div>
     </>
   );
 }

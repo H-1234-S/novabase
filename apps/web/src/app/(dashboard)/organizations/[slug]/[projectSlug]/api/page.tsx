@@ -9,5 +9,9 @@ export default async function ApiDocsPage({
   const { slug, projectSlug } = await params;
   const docs = await retrieveApiDocsFromApi(slug, projectSlug);
 
-  return <ApiDocsClient docs={docs} />;
+  return (
+    <div className="h-full min-h-0 overflow-y-auto p-6">
+      <ApiDocsClient docs={docs} />
+    </div>
+  );
 }

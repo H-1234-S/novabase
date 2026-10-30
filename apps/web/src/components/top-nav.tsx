@@ -1,70 +1,122 @@
 'use client';
 
-import { useParams } from 'next/navigation';
-import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
+import { useParams, usePathname } from 'next/navigation';
+import { Check, ChevronsUpDown, Settings } from 'lucide-react';
+import type { Project } from '@novabase/types';
 import { Button } from '@/components/ui/button';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu';
-import { Project } from '@novabase/types';
-import Link from 'next/link';
+} from '@/components/ui/dropdown-menu';
+
+const sectionLabels: Record<string, string> = {
+  projects: 'Projects',
+  database: 'Database',
+  sql: 'SQL Editor',
+  auth: 'Authentication',
+  providers: 'Providers',
+  users: 'Users',
+  'url-configuration': 'URL Configuration',
+  storage: 'Storage',
+  api: 'API',
+  realtime: 'Realtime',
+  settings: 'Settings',
+  members: 'Members',
+};
 
 interface TopNavProps {
   projects: Project[];
 }
 
 export function TopNav({ projects }: TopNavProps) {
-  const params = useParams<{ slug: string; projectSlug: string }>();
-  const currentProject = projects.find((p) => p.slug === params?.projectSlug);
+  const pathname = usePathname();
+  const params = useParams<{ slug: string; projectSlug?: string }>();
+  const currentProject = projects.find(
+    (project) => project.slug === params.projectSlug,
+  );
+  const section = pathname.split('/').filter(Boolean).at(-1) ?? 'projects';
+  const sectionLabel = sectionLabels[section] ?? section;
+  const organizationHref = `/organizations/${params.slug}/projects`;
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
-      <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="mr-2 h-4" />
-
-      {params?.slug && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-1.5 font-normal">
-              <span className="text-sm">
-                {currentProject?.name ?? 'Select project'}
-              </span>
-              <ChevronsUpDown size={12} className="text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            {projects.length > 0 && (
-              <>
-                {projects.map((project) => (
-                  <DropdownMenuItem key={project.id} asChild>
-                    <Link
-                      href={`/organizations/${params.slug}/${project.slug}/database`}
-                      className="flex items-center justify-between"
-                    >
-                      <span>{project.name}</span>
-                      {project.slug === params?.projectSlug && (
-                        <Check size={14} className="text-muted-foreground" />
-                      )}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-              </>
+    <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b bg-background px-4 sm:px-6">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/organizations">Organizations</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            {params.projectSlug || section === 'projects' ? (
+              <BreadcrumbLink asChild>
+                <Link href={organizationHref}>{params.slug}</Link>
+              </BreadcrumbLink>
+            ) : (
+              <BreadcrumbPage>{params.slug}</BreadcrumbPage>
             )}
-            <DropdownMenuItem asChild>
-              <Link href={`/organizations/${params.slug}/projects`}>
-                All projects
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+          </BreadcrumbItem>
+          {params.projectSlug && (
+            <>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="-ml-2 gap-1.5 px-2 font-normal">
+                      {currentProject?.name ?? params.projectSlug}
+                      <ChevronsUpDown className="text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56">
+                    {projects.map((project) => (
+                      <DropdownMenuItem key={project.id} asChild>
+                        <Link
+                          href={`/organizations/${params.slug}/${project.slug}/database`}
+                          className="flex items-center justify-between"
+                        >
+                          {project.name}
+                          {project.slug === params.projectSlug && <Check />}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                    {projects.length > 0 && <DropdownMenuSeparator />}
+                    <DropdownMenuItem asChild>
+                      <Link href={organizationHref}>All projects</Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </BreadcrumbItem>
+            </>
+          )}
+          {section !== 'projects' && (
+            <>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{sectionLabel}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </>
+          )}
+        </BreadcrumbList>
+      </Breadcrumb>
+      <Button asChild variant="outline" size="sm">
+        <Link href={`/organizations/${params.slug}/settings/members`}>
+          <Settings />
+          Organization settings
+        </Link>
+      </Button>
     </header>
   );
 }

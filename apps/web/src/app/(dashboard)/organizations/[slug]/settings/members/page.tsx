@@ -15,7 +15,7 @@ export default async function MembersSettingsPage({
   ]);
 
   return (
-    <div>
+    <div className="flex-1 overflow-y-auto p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-medium">Members</h1>
         <p className="text-sm text-muted-foreground mt-1">

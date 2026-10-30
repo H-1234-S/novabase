@@ -20,7 +20,7 @@ export default async function ProjectsPage({
   const isAdmin = org.role === ORG_ROLES.ADMIN;
 
   return (
-    <div>
+    <div className="flex-1 overflow-y-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-medium">Projects</h1>
         {isAdmin && <CreateProjectModal slug={slug} />}

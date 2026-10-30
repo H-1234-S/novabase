@@ -10,7 +10,7 @@ export default async function SqlEditorPage({
   const history = await retrieveSqlHistoryFromApi(slug, projectSlug);
 
   return (
-    <div className="-mx-6 -mt-6 -mb-6 flex h-[calc(100svh-3rem)] min-h-0 flex-col overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <SqlEditorClient
         orgSlug={slug}
         projectSlug={projectSlug}

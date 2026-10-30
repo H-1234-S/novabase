@@ -26,6 +26,7 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "type": "module",
+  "sideEffects": false,
   "files": [
     "dist"
   ],
@@ -34,24 +35,31 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
     "prepublishOnly": "tsdown"
   },
-  "packageManager": "pnpm@12.6.0",
-  "dependencies": {
+  "peerDependencies": {
     "socket.io-client": "^4.8.4",
     "uploadthing": "^7.7.4"
   },
   "devDependencies": {
     "@novabase/constants": "workspace:*",
+    "socket.io-client": "catalog:",
     "tsdown": "^0.23.0",
-    "typescript": "^7.0.2"
+    "typescript": "catalog:",
+    "uploadthing": "catalog:"
   }
 }
