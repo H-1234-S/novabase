@@ -2,7 +2,7 @@ import {
   retrieveProjectForRealtime,
   retrieveTablesForRealtime,
 } from '@/features/realtime/realtime-helpers.server';
-import { RealtimeClient } from '@/features/realtime/realtime-client';
+import { RealtimeClient } from '@/features/realtime/components/realtime-client';
 
 export default async function RealtimePage({
   params,
