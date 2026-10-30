@@ -126,7 +126,7 @@ export function AppSidebar({ orgs, user }: AppSidebarProps) {
   );
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" style={{ top: '3.5rem' }}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

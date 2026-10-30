@@ -100,7 +100,7 @@ export function ProjectAuthShell({
         </nav>
       </aside>
 
-      <div className="min-w-0 flex-1 overflow-y-auto">{children}</div>
+      <div className="min-w-0 flex-1 overflow-y-auto p-6">{children}</div>
     </div>
   );
 }

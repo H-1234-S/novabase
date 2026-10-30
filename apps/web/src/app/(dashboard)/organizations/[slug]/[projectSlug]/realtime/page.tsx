@@ -17,12 +17,14 @@ export default async function RealtimePage({
   ]);
 
   return (
-    <RealtimeClient
-      orgSlug={slug}
-      projectSlug={projectSlug}
-      projectId={project.id}
-      anonKey={project.anonKey}
-      tables={tables}
-    />
+    <div className="h-full min-h-0 overflow-y-auto p-6">
+      <RealtimeClient
+        orgSlug={slug}
+        projectSlug={projectSlug}
+        projectId={project.id}
+        anonKey={project.anonKey}
+        tables={tables}
+      />
+    </div>
   );
 }
