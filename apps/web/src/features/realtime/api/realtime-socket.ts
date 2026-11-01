@@ -55,6 +55,7 @@ export function emitSubscription(
         ? { table: tableName, since }
         : tableName;
 
+    // 将事件发送给服务器
     socket.emit(event, payload, (response: SubscriptionAck) => {
       clearTimeout(timeout);
       resolve(

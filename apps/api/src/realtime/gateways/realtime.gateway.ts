@@ -176,7 +176,9 @@ export class RealtimeGateway
     return value;
   }
 
-  private parseSubscribePayload(value: unknown):
+  private parseSubscribePayload(
+    value: unknown,
+  ):
     | { parsed: ParsedSubscribe }
     | { error: 'INVALID_TABLE' | 'INVALID_CURSOR' } {
     const tableName =
@@ -237,7 +239,8 @@ export class RealtimeGateway
         const right = BigInt(b.seq);
         return left < right ? -1 : left > right ? 1 : 0;
       });
-      for (const event of events) this.deliverEvent(client, subscription, event);
+      for (const event of events)
+        this.deliverEvent(client, subscription, event);
     }
     subscription.replaying = false;
   }
@@ -375,6 +378,8 @@ export class RealtimeGateway
         return;
       }
       subscription.lastSeq = BigInt(since);
+
+      // 建立 listener 连接
       await this.realtimeService.subscribe(
         projectId,
         tableName,
@@ -525,10 +530,10 @@ export class RealtimeGateway
         status === 400
           ? 'INVALID_CURSOR'
           : status === 404
-          ? 'REALTIME_NOT_ENABLED'
-          : status === 429
-            ? 'LIMIT_EXCEEDED'
-            : 'SUBSCRIBE_FAILED';
+            ? 'REALTIME_NOT_ENABLED'
+            : status === 429
+              ? 'LIMIT_EXCEEDED'
+              : 'SUBSCRIBE_FAILED';
       this.acknowledge(ack, {
         ok: false,
         code,
@@ -536,10 +541,10 @@ export class RealtimeGateway
           status === 400
             ? 'Invalid realtime cursor'
             : status === 404
-            ? 'Realtime is not enabled for this table'
-            : status === 429
-              ? 'Realtime capacity reached'
-              : 'Could not subscribe to this table',
+              ? 'Realtime is not enabled for this table'
+              : status === 429
+                ? 'Realtime capacity reached'
+                : 'Could not subscribe to this table',
       });
     }
   }

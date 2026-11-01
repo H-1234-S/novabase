@@ -42,15 +42,26 @@ export async function provisionProjectRole(
   const roleIdent = sql.identifier(role);
 
   // schema 的所有者保持为 provisioner，不交给项目角色
+
+  // 动态创建 Schema
+  // IF NOT EXISTS 存在也不报错
   await db.execute(sql`CREATE SCHEMA IF NOT EXISTS ${schemaIdent}`);
 
+  // 检查 role 在 pg_roles 中是否存在
+  // `pg_roles` 是系统视图，角色是集群级
   const roleExists = await db.execute<{ exists: boolean }>(
     sql`SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = ${role}) AS "exists"`,
   );
+
+  // 不存在即创建
+  // NOLOGIN 表示不能用于登录
   if (!roleExists.rows[0]?.exists) {
     await db.execute(sql`CREATE ROLE ${roleIdent} NOLOGIN`);
   }
 
+  // 指定角色在指定Schema里的权限
+  // USAGE 读
+  // CREATE 创建
   await db.execute(
     sql`GRANT USAGE, CREATE ON SCHEMA ${schemaIdent} TO ${roleIdent}`,
   );

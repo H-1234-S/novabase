@@ -231,7 +231,10 @@ export function useRealtimeSubscriptions({
           return next;
         });
 
-        if (msg.code === 'CURSOR_EXPIRED' || msg.code === 'CURSOR_REPLAY_FAILED') {
+        if (
+          msg.code === 'CURSOR_EXPIRED' ||
+          msg.code === 'CURSOR_REPLAY_FAILED'
+        ) {
           if (msg.cursor) updateCursor(table, msg.cursor);
           setSnapshotNotices((prev) =>
             new Map(prev).set(
@@ -297,6 +300,8 @@ export function useRealtimeSubscriptions({
             throw new Error('Could not enable Realtime for this table');
           }
 
+          // 用户开启某表订阅时，先 `POST .../realtime/{table}/enable` 开启触发器
+          // 再 `emitSubscription(socket, REALTIME_EVENTS.SUBSCRIBE, tableName)`
           const ack = await emitSubscription(
             socket,
             REALTIME_EVENTS.SUBSCRIBE,
@@ -305,7 +310,10 @@ export function useRealtimeSubscriptions({
           if (!ack.ok) throw new Error(ack.message);
 
           setSubscribedTables((prev) => new Set([...prev, tableName]));
-          subscribedRef.current = new Set([...subscribedRef.current, tableName]);
+          subscribedRef.current = new Set([
+            ...subscribedRef.current,
+            tableName,
+          ]);
           handleSubscribeAck(tableName, ack);
           if (ack.gap === 'none') await syncTableSnapshot(tableName);
           return;

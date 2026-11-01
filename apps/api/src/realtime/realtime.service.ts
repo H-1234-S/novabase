@@ -198,8 +198,12 @@ export class RealtimeService implements OnModuleDestroy {
     }
 
     const eventRows = result.rows.filter(
-      (row): row is typeof row & { seq: string; payload: Omit<RealtimeEvent, 'seq'> } =>
-        row.seq !== null && row.payload !== null,
+      (
+        row,
+      ): row is typeof row & {
+        seq: string;
+        payload: Omit<RealtimeEvent, 'seq'>;
+      } => row.seq !== null && row.payload !== null,
     );
     if (eventRows.length > maxRows) {
       return {
@@ -337,6 +341,7 @@ export class RealtimeService implements OnModuleDestroy {
     });
     entry.client = client;
 
+    // 收到通知则按顺序调用订阅者的回调函数
     client.on('notification', (message) => {
       if (
         entry.client !== client ||
@@ -397,6 +402,8 @@ export class RealtimeService implements OnModuleDestroy {
         await this.endClient(client);
         return;
       }
+
+      // 监听 channel
       await client.query(`LISTEN ${this.quoteIdentifier(entry.channel)}`);
       if (
         entry.closing ||
