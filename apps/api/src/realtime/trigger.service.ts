@@ -77,6 +77,8 @@ export class TriggerService {
     const expiryFunction = this.quoteIdentifier('_rt_outbox_mark_expired');
     const expiryTrigger = this.quoteIdentifier('_rt_outbox_expiry_trigger');
 
+    // 追加式存储所有变更事件（自增 seq、表名、操作类型、JSONB payload）
+    // 作为可靠的 “变更日志”
     await this.drizzle.db.execute(`
       CREATE TABLE IF NOT EXISTS ${schema}.${outbox} (
         seq BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -90,6 +92,8 @@ export class TriggerService {
       CREATE INDEX IF NOT EXISTS ${outboxIndex}
       ON ${schema}.${outbox} (table_name, seq)
     `);
+
+    // 记录每张表已处理到的最新 seq 和已过期 seq，用于断点续传。
     await this.drizzle.db.execute(`
       CREATE TABLE IF NOT EXISTS ${schema}.${outboxState} (
         table_name TEXT PRIMARY KEY,
@@ -97,6 +101,9 @@ export class TriggerService {
         expired_through_seq BIGINT NOT NULL DEFAULT 0
       )
     `);
+
+    // 函数 + 触发器
+    // outbox 被清理（删除）时记录已过期位置。
     await this.drizzle.db.execute(`
       CREATE OR REPLACE FUNCTION ${schema}.${expiryFunction}()
       RETURNS TRIGGER AS $$

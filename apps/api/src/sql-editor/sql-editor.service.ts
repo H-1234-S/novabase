@@ -99,7 +99,7 @@ export class SqlEditorService {
     // TODO：SQL Verification
 
     const project = await this.getProject(orgSlug, projectSlug);
-    // 解析第一行 SQL 语句
+    // 解析第一段 SQL 语句
     const statement = this.parseSingleStatement(querySql);
 
     const normalised = statement.trim().toUpperCase();
@@ -127,7 +127,6 @@ export class SqlEditorService {
       const results = await neonSql.transaction(
         (txn) => [
           // 第一层（唯一可靠的一层）：整个事务以项目角色身份执行，由数据库内核拦截越界访问。
-          // 必须是第一条：SET LOCAL ROLE 失败会中止整批事务，用户 SQL 不会退回到 owner 身份执行。
           txn`SET LOCAL ROLE ${txn.unsafe(quoteIdentifier(projectRole))}`,
           // 第二层：只是名字解析顺序，让用户可省略 schema 前缀。不再包含 public，
           // 避免缺表时静默落到控制面 schema（public 的 USAGE 已在 migration 中从 PUBLIC 收回）。

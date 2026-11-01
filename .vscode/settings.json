@@ -34,6 +34,6 @@
   ],
   "oxc.enable": true,
   "oxc.lint.run": "onSave",
-  "commentTranslate.source": "Bing",
+  "commentTranslate.source": "Google",
   "cSpell.words": ["ILIKE", "TIMESTAMPTZ", "uploadthing"]
 }
